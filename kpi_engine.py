@@ -128,16 +128,16 @@ def calcular_tendencia_diaria(df: pd.DataFrame) -> pd.DataFrame:
   if "Fecha" not in df.columns or df["Fecha"].isna().all():
     return pd.DataFrame(columns=["Fecha", "Total_Llamadas", "Total_SI", "Total_NO", "Pct_Efectividad"])
   tmp = df.dropna(subset=["Fecha"]).copy()
-    tmp["Dia"] = tmp["Fecha"].dt.date
-    agg = (
-      tmp.groupby("Dia")["Llamada_Efectiva"]
-      .value_counts()
-      .unstack(fill_value=0)
-      .reindex(columns=["SI", "NO"], fill_value=0)
-    )
-    agg["Total_Llamadas"] = agg["SI"] + agg["NO"]
-    agg["Pct_Efectividad"] = (agg["SI"] / agg["Total_Llamadas"] * 100).round(1)
-    agg = agg.rename(columns={"SI": "Total_SI", "NO": "Total_NO"}).reset_index()
-    agg = agg.rename(columns={"Dia": "Fecha"}).sort_values("Fecha")
-    return agg
+  tmp["Dia"] = tmp["Fecha"].dt.date
+  agg = (
+    tmp.groupby("Dia")["Llamada_Efectiva"]
+    .value_counts()
+    .unstack(fill_value=0)
+    .reindex(columns=["SI", "NO"], fill_value=0)
+  )
+  agg["Total_Llamadas"] = agg["SI"] + agg["NO"]
+  agg["Pct_Efectividad"] = (agg["SI"] / agg["Total_Llamadas"] * 100).round(1)
+  agg = agg.rename(columns={"SI": "Total_SI", "NO": "Total_NO"}).reset_index()
+  agg = agg.rename(columns={"Dia": "Fecha"}).sort_values("Fecha")
+  return agg
     

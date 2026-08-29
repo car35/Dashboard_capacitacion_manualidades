@@ -127,7 +127,7 @@ def calcular_tendencia_diaria(df: pd.DataFrame) -> pd.DataFrame:
   """Serie diaria de Total / SI / NO / % Efectividad, si hay columna Fecha."""
   if "Fecha" not in df.columns or df["Fecha"].isna().all():
     return pd.DataFrame(columns=["Fecha", "Total_Llamadas", "Total_SI", "Total_NO", "Pct_Efectividad"])
-      tmp = df.dropna(subset=["Fecha"]).copy()
+  tmp = df.dropna(subset=["Fecha"]).copy()
     tmp["Dia"] = tmp["Fecha"].dt.date
     agg = (
       tmp.groupby("Dia")["Llamada_Efectiva"]

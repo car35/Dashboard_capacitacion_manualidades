@@ -72,10 +72,10 @@ def calcular_pivote_responsable_comuna(df: pd.DataFrame, metrica: str = "pct") -
     )
     return pivote
 
-def _pct(grupo: pd.DataFrame) -> float:
-  total = len(grupo)
-  si = int((grupo["Llamada_Efectiva"] == "SI").sum())
-  return _pct_efectividad(total, si)
+  def _pct(grupo: pd.DataFrame) -> float:
+    total = len(grupo)
+    si = int((grupo["Llamada_Efectiva"] == "SI").sum())
+    return _pct_efectividad(total, si)
 
   pivote = (
   df.groupby(["Responsable", "Comuna"])

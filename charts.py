@@ -111,7 +111,7 @@ def grafico_ranking_responsables(tabla_resp, n=10):
 
 
 def grafico_comparativo_responsables(tabla_resp):
-datos = tabla_resp.sort_values("Total_Llamadas", ascending=True)
+  datos = tabla_resp.sort_values("Total_Llamadas", ascending=True)
   fig = go.Figure()
   fig.add_bar(name="Efectivas (SI)", x=datos["Total_SI"], y=datos["Responsable"], orientation="h", marker_color=COLOR_SI)
   fig.add_bar(name="No efectivas (NO)", x=datos["Total_NO"], y=datos["Responsable"], orientation="h", marker_color=COLOR_NO)

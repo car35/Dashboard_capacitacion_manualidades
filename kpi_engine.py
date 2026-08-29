@@ -93,16 +93,16 @@ def calcular_kpis_generales(df: pd.DataFrame) -> KPIsGenerales:
   tabla_resp = calcular_tabla_responsables(df)
 
   if not tabla_comunas.empty:
-  fila_mejor_comuna = tabla_comunas.iloc[0]
-  fila_peor_comuna = tabla_comunas.iloc[-1]
+    fila_mejor_comuna = tabla_comunas.iloc[0]
+    fila_peor_comuna = tabla_comunas.iloc[-1]
   else:
-  fila_mejor_comuna = fila_peor_comuna = {"Comuna": "-", "Pct_Efectividad": 0.0}
+    fila_mejor_comuna = fila_peor_comuna = {"Comuna": "-", "Pct_Efectividad": 0.0}
 
   if not tabla_resp.empty:
-  fila_mejor_resp = tabla_resp.iloc[0]
-  fila_peor_resp = tabla_resp.iloc[-1]
+    fila_mejor_resp = tabla_resp.iloc[0]
+    fila_peor_resp = tabla_resp.iloc[-1]
   else:
-  fila_mejor_resp = fila_peor_resp = {"Responsable": "-", "Pct_Productividad": 0.0}
+    fila_mejor_resp = fila_peor_resp = {"Responsable": "-", "Pct_Productividad": 0.0}
 
   return KPIsGenerales(
   total_llamadas=total,

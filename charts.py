@@ -78,25 +78,25 @@ def grafico_heatmap_comuna(tabla_comunas):
 
 
 def grafico_top_comunas(tabla_comunas, mejores=True, n=10):
-datos = tabla_comunas.sort_values("Pct_Efectividad", ascending=not mejores).head(n)
-datos = datos.sort_values("Pct_Efectividad", ascending=True)
-color = COLOR_SI if mejores else COLOR_NO
-titulo = f"Top {n} comunas con {'mejor' if mejores else 'menor'} efectividad"
-fig = go.Figure(
-go.Bar(
-x=datos["Pct_Efectividad"], y=datos["Comuna"], orientation="h",
-marker_color=color, text=datos["Pct_Efectividad"].map(lambda v: f"{v:.1f}%"),
-textposition="outside",
-)
-)
-_aplicar_layout_base(fig, titulo)
-fig.update_xaxes(title="% Efectividad", range=[0, 105])
-return fig
+  datos = tabla_comunas.sort_values("Pct_Efectividad", ascending=not mejores).head(n)
+  datos = datos.sort_values("Pct_Efectividad", ascending=True)
+  color = COLOR_SI if mejores else COLOR_NO
+  titulo = f"Top {n} comunas con {'mejor' if mejores else 'menor'} efectividad"
+  fig = go.Figure(
+  go.Bar(
+  x=datos["Pct_Efectividad"], y=datos["Comuna"], orientation="h",
+  marker_color=color, text=datos["Pct_Efectividad"].map(lambda v: f"{v:.1f}%"),
+  textposition="outside",
+  )
+  )
+  _aplicar_layout_base(fig, titulo)
+  fig.update_xaxes(title="% Efectividad", range=[0, 105])
+  return fig
 
 
 
 def grafico_ranking_responsables(tabla_resp, n=10):
-datos = tabla_resp.sort_values("Pct_Productividad", ascending=False).head(n)
+  datos = tabla_resp.sort_values("Pct_Productividad", ascending=False).head(n)
   datos = datos.sort_values("Pct_Productividad", ascending=True)
   fig = go.Figure(
   go.Bar(
@@ -122,44 +122,44 @@ return fig
 
 
 def grafico_tendencia(tendencia):
-if tendencia.empty:
+  if tendencia.empty:
+    fig = go.Figure()
+    fig.add_annotation(text="No hay columna de fecha disponible para mostrar tendencia", showarrow=False, font=dict(size=14, color=COLOR_NEUTRO))
+    _aplicar_layout_base(fig, "Tendencia historica")
+    fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False)
+    return fig
   fig = go.Figure()
-  fig.add_annotation(text="No hay columna de fecha disponible para mostrar tendencia", showarrow=False, font=dict(size=14, color=COLOR_NEUTRO))
-  _aplicar_layout_base(fig, "Tendencia historica")
-  fig.update_xaxes(visible=False)
-  fig.update_yaxes(visible=False)
+  fig.add_trace(go.Bar(x=tendencia["Fecha"], y=tendencia["Total_Llamadas"], name="Total llamadas", marker_color=COLOR_ACENTO, opacity=0.55, yaxis="y"))
+  fig.add_trace(go.Scatter(x=tendencia["Fecha"], y=tendencia["Pct_Efectividad"], name="% Efectividad", mode="lines+markers", line=dict(color=COLOR_PRIMARIO, width=3), yaxis="y2"))
+  fig.update_layout(
+  yaxis=dict(title="Total llamadas"),
+  yaxis2=dict(title="% Efectividad", overlaying="y", side="right", range=[0, 100]),
+  )
+  _aplicar_layout_base(fig, "Tendencia historica de volumen y efectividad")
   return fig
-fig = go.Figure()
-fig.add_trace(go.Bar(x=tendencia["Fecha"], y=tendencia["Total_Llamadas"], name="Total llamadas", marker_color=COLOR_ACENTO, opacity=0.55, yaxis="y"))
-fig.add_trace(go.Scatter(x=tendencia["Fecha"], y=tendencia["Pct_Efectividad"], name="% Efectividad", mode="lines+markers", line=dict(color=COLOR_PRIMARIO, width=3), yaxis="y2"))
-fig.update_layout(
-yaxis=dict(title="Total llamadas"),
-yaxis2=dict(title="% Efectividad", overlaying="y", side="right", range=[0, 100]),
-)
-_aplicar_layout_base(fig, "Tendencia historica de volumen y efectividad")
-return fig
 
 
 
 def grafico_pivote_heatmap(pivote_pct):
-if pivote_pct.empty:
-  fig = go.Figure()
-  _aplicar_layout_base(fig, "Relacion Responsable - Comuna")
+  if pivote_pct.empty:
+    fig = go.Figure()
+    _aplicar_layout_base(fig, "Relacion Responsable - Comuna")
+    return fig
+  fig = go.Figure(
+    go.Heatmap(
+    z=pivote_pct.values,
+    x=pivote_pct.columns.tolist(),
+    y=pivote_pct.index.tolist(),
+    colorscale=[[0, ESCALA_CALOR[0]], [0.5, ESCALA_CALOR[1]], [1, ESCALA_CALOR[2]]],
+    zmin=0, zmax=100,
+    colorbar=dict(title="%"),
+    )
+    )
+  _aplicar_layout_base(fig, "% de efectividad por Responsable y Comuna")
+  fig.update_xaxes(tickangle=-35)
+  fig.update_layout(height=max(260, 45 * max(len(pivote_pct.index), 1)))
   return fig
-fig = go.Figure(
-  go.Heatmap(
-  z=pivote_pct.values,
-  x=pivote_pct.columns.tolist(),
-  y=pivote_pct.index.tolist(),
-  colorscale=[[0, ESCALA_CALOR[0]], [0.5, ESCALA_CALOR[1]], [1, ESCALA_CALOR[2]]],
-  zmin=0, zmax=100,
-  colorbar=dict(title="%"),
-  )
-  )
-_aplicar_layout_base(fig, "% de efectividad por Responsable y Comuna")
-fig.update_xaxes(tickangle=-35)
-fig.update_layout(height=max(260, 45 * max(len(pivote_pct.index), 1)))
-return fig
 
 
 def kpi_card_color(pct):

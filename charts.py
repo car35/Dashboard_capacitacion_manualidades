@@ -58,23 +58,23 @@ def grafico_participacion_comuna(tabla_comunas):
 
 
 def grafico_heatmap_comuna(tabla_comunas):
-datos = tabla_comunas.sort_values("Pct_Efectividad", ascending=True)
-fig = go.Figure(
-go.Heatmap(
-z=[datos["Pct_Efectividad"].tolist()],
-x=datos["Comuna"].tolist(),
-y=["% Efectividad"],
-colorscale=[[0, ESCALA_CALOR[0]], [0.5, ESCALA_CALOR[1]], [1, ESCALA_CALOR[2]]],
-text=[[f"{v:.1f}%" for v in datos["Pct_Efectividad"]]],
-texttemplate="%{text}",
-showscale=True,
-zmin=0, zmax=100,
-)
-)
-_aplicar_layout_base(fig, "Mapa de calor de desempeno por comuna")
-fig.update_layout(height=220)
-fig.update_xaxes(tickangle=-35)
-return fig
+  datos = tabla_comunas.sort_values("Pct_Efectividad", ascending=True)
+  fig = go.Figure(
+  go.Heatmap(
+  z=[datos["Pct_Efectividad"].tolist()],
+  x=datos["Comuna"].tolist(),
+  y=["% Efectividad"],
+  colorscale=[[0, ESCALA_CALOR[0]], [0.5, ESCALA_CALOR[1]], [1, ESCALA_CALOR[2]]],
+  text=[[f"{v:.1f}%" for v in datos["Pct_Efectividad"]]],
+  texttemplate="%{text}",
+  showscale=True,
+  zmin=0, zmax=100,
+  )
+  )
+  _aplicar_layout_base(fig, "Mapa de calor de desempeno por comuna")
+  fig.update_layout(height=220)
+  fig.update_xaxes(tickangle=-35)
+  return fig
 
 
 def grafico_top_comunas(tabla_comunas, mejores=True, n=10):

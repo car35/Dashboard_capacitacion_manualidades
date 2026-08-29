@@ -87,25 +87,25 @@ def _hoja_comunas(libro, fmt, tabla_comunas):
 
 
 def _hoja_responsables(libro, fmt, tabla_resp):
-hoja = libro.add_worksheet("Responsables")
-hoja.set_column("A:A", 22)
-hoja.set_column("B:E", 16)
-encabezados = ["Responsable", "Total Llamadas", "Total SI", "Total NO", "% Productividad"]
-for c, encabezado in enumerate(encabezados):
-hoja.write(0, c, encabezado, fmt["encabezado"])
-for r, (_, fila) in enumerate(tabla_resp.iterrows(), start=1):
-hoja.write(r, 0, fila["Responsable"], fmt["celda"])
-hoja.write(r, 1, int(fila["Total_Llamadas"]), fmt["celda_num"])
-hoja.write(r, 2, int(fila["Total_SI"]), fmt["celda_num"])
-hoja.write(r, 3, int(fila["Total_NO"]), fmt["celda_num"])
-hoja.write(r, 4, fila["Pct_Productividad"] / 100, fmt["celda_pct"])
-n = len(tabla_resp)
-grafico = libro.add_chart({"type": "column"})
-grafico.add_series({"name": "% Productividad", "categories": ["Responsables", 1, 0, n, 0], "values": ["Responsables", 1, 4, n, 4], "fill": {"color": COLOR_MARCA_CLARO}, "data_labels": {"value": True, "num_format": "0.0%"}})
-grafico.set_title({"name": "% de productividad por responsable"})
-grafico.set_y_axis({"num_format": "0%"})
-grafico.set_size({"width": 640, "height": 420})
-hoja.insert_chart("G2", grafico)
+  hoja = libro.add_worksheet("Responsables")
+  hoja.set_column("A:A", 22)
+  hoja.set_column("B:E", 16)
+  encabezados = ["Responsable", "Total Llamadas", "Total SI", "Total NO", "% Productividad"]
+  for c, encabezado in enumerate(encabezados):
+    hoja.write(0, c, encabezado, fmt["encabezado"])
+  for r, (_, fila) in enumerate(tabla_resp.iterrows(), start=1):
+    hoja.write(r, 0, fila["Responsable"], fmt["celda"])
+    hoja.write(r, 1, int(fila["Total_Llamadas"]), fmt["celda_num"])
+    hoja.write(r, 2, int(fila["Total_SI"]), fmt["celda_num"])
+    hoja.write(r, 3, int(fila["Total_NO"]), fmt["celda_num"])
+    hoja.write(r, 4, fila["Pct_Productividad"] / 100, fmt["celda_pct"])
+  n = len(tabla_resp)
+  grafico = libro.add_chart({"type": "column"})
+  grafico.add_series({"name": "% Productividad", "categories": ["Responsables", 1, 0, n, 0], "values": ["Responsables", 1, 4, n, 4], "fill": {"color": COLOR_MARCA_CLARO}, "data_labels": {"value": True, "num_format": "0.0%"}})
+  grafico.set_title({"name": "% de productividad por responsable"})
+  grafico.set_y_axis({"num_format": "0%"})
+  grafico.set_size({"width": 640, "height": 420})
+  hoja.insert_chart("G2", grafico)
 
 
 def _hoja_pivote(libro, fmt, pivote_pct):

@@ -117,7 +117,7 @@ def grafico_comparativo_responsables(tabla_resp):
   fig.add_bar(name="No efectivas (NO)", x=datos["Total_NO"], y=datos["Responsable"], orientation="h", marker_color=COLOR_NO)
   fig.update_layout(barmode="stack")
   _aplicar_layout_base(fig, "Comparativo de productividad por responsable")
-return fig
+  return fig
 
 
 

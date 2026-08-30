@@ -135,11 +135,11 @@ def actualizar_dashboard(datos_json, responsables, comunas, fecha_ini, fecha_fin
     fig_vacia.update_yaxes(visible=False)
     mensaje = html.Div("No hay datos para los filtros seleccionados.", className="text-muted p-3")
     return "0", "0", "0", "0.0%", "0", "0", "0.0%", "-", "-", "-", "-", fig_vacia, fig_vacia, fig_vacia, fig_vacia, fig_vacia, fig_vacia, mensaje, fig_vacia, fig_vacia, fig_vacia, mensaje, fig_vacia, mensaje
-    kpis = kpi_engine.calcular_kpis_generales(df_filtrado)
-    tabla_comunas = kpi_engine.calcular_tabla_comunas(df_filtrado)
-    tabla_resp = kpi_engine.calcular_tabla_responsables(df_filtrado)
-    pivote_pct = kpi_engine.calcular_pivote_responsable_comuna(df_filtrado, metrica="pct")
-    tendencia = kpi_engine.calcular_tendencia_diaria(df_filtrado)
-    tabla_pivote_reset = pivote_pct.reset_index()
-    return f"{kpis.total_llamadas:,}", f"{kpis.total_si:,}", f"{kpis.total_no:,}", f"{kpis.pct_efectividad:.1f}%", f"{kpis.total_responsables:,}", f"{kpis.total_comunas:,}", f"{kpis.promedio_efectividad_responsables:.1f}%", f"{kpis.mejor_comuna} ({kpis.mejor_comuna_pct:.1f}%)", f"{kpis.peor_comuna} ({kpis.peor_comuna_pct:.1f}%)", f"{kpis.mejor_responsable} ({kpis.mejor_responsable_pct:.1f}%)", f"{kpis.peor_responsable} ({kpis.peor_responsable_pct:.1f}%)", charts.grafico_barras_comuna(tabla_comunas, "Total_SI", charts.COLOR_SI, "Llamadas efectivas (SI) por comuna"), charts.grafico_barras_comuna(tabla_comunas, "Total_NO", charts.COLOR_NO, "Llamadas no efectivas (NO) por comuna"), charts.grafico_participacion_comuna(tabla_comunas), charts.grafico_heatmap_comuna(tabla_comunas), charts.grafico_top_comunas(tabla_comunas, mejores=True), charts.grafico_top_comunas(tabla_comunas, mejores=False), _tabla_dash(tabla_comunas, columnas_pct=["Pct_Efectividad", "Pct_Participacion"]), charts.grafico_ranking_responsables(tabla_resp), charts.grafico_comparativo_responsables(tabla_resp), charts.grafico_tendencia(tendencia), _tabla_dash(tabla_resp, columnas_pct=["Pct_Productividad"]), charts.grafico_pivote_heatmap(pivote_pct), _tabla_dash(tabla_pivote_reset)
+  kpis = kpi_engine.calcular_kpis_generales(df_filtrado)
+  tabla_comunas = kpi_engine.calcular_tabla_comunas(df_filtrado)
+  tabla_resp = kpi_engine.calcular_tabla_responsables(df_filtrado)
+  pivote_pct = kpi_engine.calcular_pivote_responsable_comuna(df_filtrado, metrica="pct")
+  tendencia = kpi_engine.calcular_tendencia_diaria(df_filtrado)
+  tabla_pivote_reset = pivote_pct.reset_index()
+  return f"{kpis.total_llamadas:,}", f"{kpis.total_si:,}", f"{kpis.total_no:,}", f"{kpis.pct_efectividad:.1f}%", f"{kpis.total_responsables:,}", f"{kpis.total_comunas:,}", f"{kpis.promedio_efectividad_responsables:.1f}%", f"{kpis.mejor_comuna} ({kpis.mejor_comuna_pct:.1f}%)", f"{kpis.peor_comuna} ({kpis.peor_comuna_pct:.1f}%)", f"{kpis.mejor_responsable} ({kpis.mejor_responsable_pct:.1f}%)", f"{kpis.peor_responsable} ({kpis.peor_responsable_pct:.1f}%)", charts.grafico_barras_comuna(tabla_comunas, "Total_SI", charts.COLOR_SI, "Llamadas efectivas (SI) por comuna"), charts.grafico_barras_comuna(tabla_comunas, "Total_NO", charts.COLOR_NO, "Llamadas no efectivas (NO) por comuna"), charts.grafico_participacion_comuna(tabla_comunas), charts.grafico_heatmap_comuna(tabla_comunas), charts.grafico_top_comunas(tabla_comunas, mejores=True), charts.grafico_top_comunas(tabla_comunas, mejores=False), _tabla_dash(tabla_comunas, columnas_pct=["Pct_Efectividad", "Pct_Participacion"]), charts.grafico_ranking_responsables(tabla_resp), charts.grafico_comparativo_responsables(tabla_resp), charts.grafico_tendencia(tendencia), _tabla_dash(tabla_resp, columnas_pct=["Pct_Productividad"]), charts.grafico_pivote_heatmap(pivote_pct), _tabla_dash(tabla_pivote_reset)
         

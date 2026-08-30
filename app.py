@@ -95,13 +95,13 @@ def _filtrar(df, responsables, comunas, fecha_ini, fecha_fin):
   resultado = df.copy()
   if responsables:
     resultado = resultado[resultado["Responsable"].isin(responsables)]
-    if comunas:
-      resultado = resultado[resultado["Comuna"].isin(comunas)]
-      if "Fecha" in resultado.columns and fecha_ini and fecha_fin:
-        fechas = pd.to_datetime(resultado["Fecha"])
-        mascara = (fechas >= pd.Timestamp(fecha_ini)) & (fechas <= pd.Timestamp(fecha_fin) + pd.Timedelta(days=1))
-        resultado = resultado[mascara]
-        return resultado
+  if comunas:
+    resultado = resultado[resultado["Comuna"].isin(comunas)]
+  if "Fecha" in resultado.columns and fecha_ini and fecha_fin:
+    fechas = pd.to_datetime(resultado["Fecha"])
+    mascara = (fechas >= pd.Timestamp(fecha_ini)) & (fechas <= pd.Timestamp(fecha_fin) + pd.Timedelta(days=1))
+    resultado = resultado[mascara]
+  return resultado
 
 
 def _tabla_dash(df, columnas_pct=None):

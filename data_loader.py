@@ -46,10 +46,10 @@ def _mapear_columnas(df):
       if _normalizar_texto(col) in objetivo:
         mapa_normalizado[col] = canonico
         break
-        faltantes_canonicas = set(ALIAS_COLUMNAS) - set(mapa_normalizado.values())
-        if faltantes_canonicas:
-          advertencias.append("No se reconocieron automaticamente estas columnas: " + ", ".join(sorted(faltantes_canonicas)))
-          return df.rename(columns=mapa_normalizado), advertencias
+  faltantes_canonicas = set(ALIAS_COLUMNAS) - set(mapa_normalizado.values())
+  if faltantes_canonicas:
+    advertencias.append("No se reconocieron automaticamente estas columnas: " + ", ".join(sorted(faltantes_canonicas)))
+  return df.rename(columns=mapa_normalizado), advertencias
 
 
 def _validar_estructura(df):
@@ -57,9 +57,9 @@ def _validar_estructura(df):
   faltantes = [c for c in COLUMNAS_REQUERIDAS if c not in df.columns]
   if faltantes:
     errores.append("Faltan columnas obligatorias: " + ", ".join(faltantes))
-    if df.empty:
-      errores.append("El archivo no contiene filas de datos.")
-      return errores
+  if df.empty:
+    errores.append("El archivo no contiene filas de datos.")
+    return errores
 
 
 def _normalizar_tipos(df):

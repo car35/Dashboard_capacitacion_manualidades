@@ -73,3 +73,46 @@ def cargar_datos(contenido_upload, nombre_upload):
     alertas.append(dbc.Alert(f"Archivo '{nombre}' cargado correctamente ({len(resultado.df)} filas).", color="success", dismissable=True, duration=4000))
   return resultado.df.to_json(date_format="iso", orient="split"), nombre, alertas
           
+
+
+@app.callback(Output("filtro-responsable", "options"), Output("filtro-comuna", "options"), Output("filtro-fechas", "min_date_allowed"), Output("filtro-fechas", "max_date_allowed"), Output("filtro-fechas", "start_date"), Output("filtro-fechas", "end_date"), Input("store-datos", "data"))
+def poblar_filtros(datos_json):
+  if not datos_json:
+    raise PreventUpdate
+    df = pd.read_json(io.StringIO(datos_json), orient="split")
+    opciones_resp = sorted(df["Responsable"].dropna().unique())
+    opciones_comuna = sorted(df["Comuna"].dropna().unique())
+    opts_resp = [{"label": r, "value": r} for r in opciones_resp]
+    opts_comuna = [{"label": c, "value": c} for c in opciones_comuna]
+    if "Fecha" in df.columns and not df["Fecha"].isna().all():
+      fechas = pd.to_datetime(df["Fecha"]).dropna()
+      return opts_resp, opts_comuna, fechas.min().date(), fechas.max().date(), fechas.min().date(), fechas.max().date()
+      return opts_resp, opts_comuna, None, None, None, None
+
+
+def _filtrar(df, responsables, comunas, fecha_ini, fecha_fin):
+  resultado = df.copy()
+  if responsables:
+    resultado = resultado[resultado["Responsable"].isin(responsables)]
+    if comunas:
+      resultado = resultado[resultado["Comuna"].isin(comunas)]
+    if "Fecha" in resultado.columns and fecha_ini and fecha_fin:
+      fechas = pd.to_datetime(resultado["Fecha"])
+      mascara = (fechas >= pd.Timestamp(fecha_ini)) & (fechas <= pd.Timestamp(fecha_fin) + pd.Timedelta(days=1))
+      resultado = resultado[mascara]
+      return resultado
+
+
+def _tabla_dash(df, columnas_pct=None):
+  columnas_pct = columnas_pct or []
+  columnas = []
+  for col in df.columns:
+    col_def = {"name": col.replace("_", " "), "id": col}
+    if col in columnas_pct:
+      col_def["type"] = "numeric"
+      col_def["format"] = {"specifier": ".1f"}
+      columnas.append(col_def)
+      return dash_table.DataTable(data=df.to_dict("records"), columns=columnas, sort_action="native", filter_action="native", page_size=10, style_table={"overflowX": "auto"}, style_header={"backgroundColor": "#1B4965", "color": "white", "fontWeight": "bold"}, style_cell={"fontFamily": "Inter, Arial, sans-serif", "fontSize": 13, "padding": "8px"}, style_data_conditional=[{"if": {"row_index": "odd"}, "backgroundColor": "#F5F8FA"}])
+
+
+OUTPUTS_PRINCIPALES = [Output("kpi-total-llamadas", "children"), Output("kpi-total-si", "children"), Output("kpi-total-no", "children"), Output("kpi-pct-efectividad", "children"), Output("kpi-total-responsables", "children"), Output("kpi-total-comunas", "children"), Output("kpi-promedio-efectividad", "children"), Output("kpi-mejor-comuna", "children"), Output("kpi-peor-comuna", "children"), Output("kpi-mejor-responsable", "children"), Output("kpi-peor-responsable", "children"), Output("grafico-comuna-si", "figure"), Output("grafico-comuna-no", "figure"), Output("grafico-comuna-participacion", "figure"), Output("grafico-comuna-heatmap", "figure"), Output("grafico-comuna-top-mejores", "figure"), Output("grafico-comuna-top-peores", "figure"), Output("tabla-comunas", "children"), Output("grafico-resp-ranking", "figure"), Output("grafico-resp-comparativo", "figure"), Output("grafico-resp-tendencia", "figure"), Output("tabla-responsables", "children"), Output("grafico-pivote-heatmap", "figure"), Output("tabla-pivote", "children")]

@@ -142,3 +142,27 @@ def actualizar_dashboard(datos_json, responsables, comunas, fecha_ini, fecha_fin
         tabla_pivote_reset = pivote_pct.reset_index()
         return f"{kpis.total_llamadas:,}", f"{kpis.total_si:,}", f"{kpis.total_no:,}", f"{kpis.pct_efectividad:.1f}%", f"{kpis.total_responsables:,}", f"{kpis.total_comunas:,}", f"{kpis.promedio_efectividad_responsables:.1f}%", f"{kpis.mejor_comuna} ({kpis.mejor_comuna_pct:.1f}%)", f"{kpis.peor_comuna} ({kpis.peor_comuna_pct:.1f}%)", f"{kpis.mejor_responsable} ({kpis.mejor_responsable_pct:.1f}%)", f"{kpis.peor_responsable} ({kpis.peor_responsable_pct:.1f}%)", charts.grafico_barras_comuna(tabla_comunas, "Total_SI", charts.COLOR_SI, "Llamadas efectivas (SI) por comuna"), charts.grafico_barras_comuna(tabla_comunas, "Total_NO", charts.COLOR_NO, "Llamadas no efectivas (NO) por comuna"), charts.grafico_participacion_comuna(tabla_comunas), charts.grafico_heatmap_comuna(tabla_comunas), charts.grafico_top_comunas(tabla_comunas, mejores=True), charts.grafico_top_comunas(tabla_comunas, mejores=False), _tabla_dash(tabla_comunas, columnas_pct=["Pct_Efectividad", "Pct_Participacion"]), charts.grafico_ranking_responsables(tabla_resp), charts.grafico_comparativo_responsables(tabla_resp), charts.grafico_tendencia(tendencia), _tabla_dash(tabla_resp, columnas_pct=["Pct_Productividad"]), charts.grafico_pivote_heatmap(pivote_pct), _tabla_dash(tabla_pivote_reset)
         
+
+
+@app.callback(Output("descarga-excel", "data"), Input("btn-exportar-excel", "n_clicks"), State("store-datos", "data"), State("store-nombre-archivo", "data"), State("filtro-responsable", "value"), State("filtro-comuna", "value"), State("filtro-fechas", "start_date"), State("filtro-fechas", "end_date"), prevent_initial_call=True)
+def exportar_excel(n_clicks, datos_json, nombre_archivo, responsables, comunas, fecha_ini, fecha_fin):
+  if not datos_json:
+    raise PreventUpdate
+    df = pd.read_json(io.StringIO(datos_json), orient="split")
+    if "Fecha" in df.columns:
+      df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+      df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
+      if df_filtrado.empty:
+        raise PreventUpdate
+        kpis = kpi_engine.calcular_kpis_generales(df_filtrado)
+        tabla_comunas = kpi_engine.calcular_tabla_comunas(df_filtrado)
+        tabla_resp = kpi_engine.calcular_tabla_responsables(df_filtrado)
+        pivote_pct = kpi_engine.calcular_pivote_responsable_comuna(df_filtrado, metrica="pct")
+        contenido = generar_reporte_excel(df_filtrado, kpis, tabla_comunas, tabla_resp, pivote_pct, nombre_fuente=nombre_archivo or "Dashboard de Productividad")
+        nombre_salida = f"Reporte_Productividad_{datetime.now():%Y%m%d_%H%M}.xlsx"
+        return dcc.send_bytes(contenido, nombre_salida)
+
+
+if __name__ == "__main__":
+  app.run(debug=True, host="0.0.0.0", port=8050)
+  

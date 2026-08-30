@@ -149,19 +149,19 @@ def actualizar_dashboard(datos_json, responsables, comunas, fecha_ini, fecha_fin
 def exportar_excel(n_clicks, datos_json, nombre_archivo, responsables, comunas, fecha_ini, fecha_fin):
   if not datos_json:
     raise PreventUpdate
-    df = pd.read_json(io.StringIO(datos_json), orient="split")
-    if "Fecha" in df.columns:
-      df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-      df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
-      if df_filtrado.empty:
-        raise PreventUpdate
-        kpis = kpi_engine.calcular_kpis_generales(df_filtrado)
-        tabla_comunas = kpi_engine.calcular_tabla_comunas(df_filtrado)
-        tabla_resp = kpi_engine.calcular_tabla_responsables(df_filtrado)
-        pivote_pct = kpi_engine.calcular_pivote_responsable_comuna(df_filtrado, metrica="pct")
-        contenido = generar_reporte_excel(df_filtrado, kpis, tabla_comunas, tabla_resp, pivote_pct, nombre_fuente=nombre_archivo or "Dashboard de Productividad")
-        nombre_salida = f"Reporte_Productividad_{datetime.now():%Y%m%d_%H%M}.xlsx"
-        return dcc.send_bytes(contenido, nombre_salida)
+  df = pd.read_json(io.StringIO(datos_json), orient="split")
+  if "Fecha" in df.columns:
+  df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+  df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
+  if df_filtrado.empty:
+    raise PreventUpdate
+  kpis = kpi_engine.calcular_kpis_generales(df_filtrado)
+  tabla_comunas = kpi_engine.calcular_tabla_comunas(df_filtrado)
+  tabla_resp = kpi_engine.calcular_tabla_responsables(df_filtrado)
+  pivote_pct = kpi_engine.calcular_pivote_responsable_comuna(df_filtrado, metrica="pct")
+  contenido = generar_reporte_excel(df_filtrado, kpis, tabla_comunas, tabla_resp, pivote_pct, nombre_fuente=nombre_archivo or "Dashboard de Productividad")
+  nombre_salida = f"Reporte_Productividad_{datetime.now():%Y%m%d_%H%M}.xlsx"
+  return dcc.send_bytes(contenido, nombre_salida)
 
 
 if __name__ == "__main__":

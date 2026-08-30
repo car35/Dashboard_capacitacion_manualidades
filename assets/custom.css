@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --color-marca: #1B4965;
+  --color-acento: #5FA8D3;
+  --color-si: #2BB673;
+  --color-no: #E4572E;
+  --color-fondo: #F4F7F9;
+  --color-texto: #2B2F38;
+}
+
+body {
+  background-color: var(--color-fondo);
+  font-family: 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: var(--color-texto);
+}
+
+.navbar {
+  background: linear-gradient(90deg, #14324A 0%, var(--color-marca) 100%) !important;
+}
+
+/* --- Tarjetas KPI --- */
+.tarjeta-kpi {
+  border: none;
+  border-radius: 14px;
+  border-left: 4px solid var(--color-acento);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  height: 100%;
+}
+
+.tarjeta-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(27, 73, 101, 0.12) !important;
+}
+
+.kpi-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kpi-icono {
+  font-size: 1.1rem;
+  color: var(--color-acento);
+}
+
+.kpi-etiqueta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6B7686;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-valor {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--color-marca);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* --- Filtros --- */
+.filtro-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6B7686;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* --- Tabs --- */
+.nav-tabs .nav-link {
+  font-weight: 600;
+  color: #6B7686;
+  border: none;
+  border-bottom: 3px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--color-marca) !important;
+  border-bottom: 3px solid var(--color-marca);
+  background: transparent;
+}
+
+/* --- Cards de graficos --- */
+.js-plotly-plot {
+  border-radius: 12px;
+}
+
+.card {
+  border-radius: 14px;
+}

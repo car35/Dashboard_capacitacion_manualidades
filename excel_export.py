@@ -184,5 +184,5 @@ def generar_exportacion_responsable(df):
         hoja.write(fila, col, valor, fmt_celda)
   libro.close()
   buffer.seek(0)
-    return buffer.read()
+  return buffer.read()
               

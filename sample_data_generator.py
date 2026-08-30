@@ -69,8 +69,8 @@ def generar_datos(n_filas=1800, semilla=42):
     fecha = fecha_inicio + timedelta(days=random.randint(0, 45), hours=random.randint(7, 18), minutes=random.randint(0, 59))
     observaciones = random.choice(OBSERVACIONES_SI if efectiva == "SI" else OBSERVACIONES_NO)
     filas.append({"Responsable": responsable, "Comuna": comuna, "Llamada_Efectiva": efectiva, "Fecha": fecha, "Cliente": random.choice(NOMBRES), "Observaciones": observaciones})
-    df = pd.DataFrame(filas).sort_values("Fecha").reset_index(drop=True)
-    return df
+  df = pd.DataFrame(filas).sort_values("Fecha").reset_index(drop=True)
+  return df
 
 
 def main():

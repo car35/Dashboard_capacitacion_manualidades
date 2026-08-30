@@ -80,15 +80,15 @@ def cargar_datos(contenido_upload, nombre_upload):
 def poblar_filtros(datos_json):
   if not datos_json:
     raise PreventUpdate
-    df = pd.read_json(io.StringIO(datos_json), orient="split")
-    opciones_resp = sorted(df["Responsable"].dropna().unique())
-    opciones_comuna = sorted(df["Comuna"].dropna().unique())
-    opts_resp = [{"label": r, "value": r} for r in opciones_resp]
-    opts_comuna = [{"label": c, "value": c} for c in opciones_comuna]
-    if "Fecha" in df.columns and not df["Fecha"].isna().all():
-      fechas = pd.to_datetime(df["Fecha"]).dropna()
-      return opts_resp, opts_comuna, fechas.min().date(), fechas.max().date(), fechas.min().date(), fechas.max().date()
-      return opts_resp, opts_comuna, None, None, None, None
+  df = pd.read_json(io.StringIO(datos_json), orient="split")
+  opciones_resp = sorted(df["Responsable"].dropna().unique())
+  opciones_comuna = sorted(df["Comuna"].dropna().unique())
+  opts_resp = [{"label": r, "value": r} for r in opciones_resp]
+  opts_comuna = [{"label": c, "value": c} for c in opciones_comuna]
+  if "Fecha" in df.columns and not df["Fecha"].isna().all():
+    fechas = pd.to_datetime(df["Fecha"]).dropna()
+    return opts_resp, opts_comuna, fechas.min().date(), fechas.max().date(), fechas.min().date(), fechas.max().date()
+  return opts_resp, opts_comuna, None, None, None, None
 
 
 def _filtrar(df, responsables, comunas, fecha_ini, fecha_fin):

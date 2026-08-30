@@ -139,3 +139,50 @@ def generar_reporte_excel(df, kpis, tabla_comunas, tabla_resp, pivote_pct, nombr
   libro.close()
   buffer.seek(0)
   return buffer.read()
+
+
+COLUMNAS_BD_COMPONENTE = ["fecha_registro", "nacionalidad", "tipo_de_documento", "numero_de_documento", "nombre", "correo_electronico", "telefono_uno", "telefono_dos", "fecha_de_nacimiento", "edad", "sexo", "direccion", "comuna", "barrio", "estrato", "formacion_amautta", "club_vida_registro", "Actual_club_vida", "Comuna_Club_Vida", "RESPONSABLE LLAMADA", "LLAMADA EFECTIVA", "ACTUALIZACION DATOS", "INTERESADO EN INGRESAR", "DETALLE LLAMADA", "RESUMEN LLAMADA", "OBSERVACION", "GUION HERRAMIENTA", "Orden_Efectiva (auxiliar - no borrar)", "Orden_NoEfectiva (auxiliar - no borrar)", "Fecha_Hora_Registro_Efectiva (auxiliar - no borrar)"]
+
+
+def _nombre_hoja_valido(texto):
+  invalidos = ["/", "\\", "*", "?", "[", "]", ":"]
+  limpio = str(texto)
+  for caracter in invalidos:
+    limpio = limpio.replace(caracter, "-")
+    return limpio[:31] if limpio else "Responsable"
+
+
+def _fila_bd_componente(registro):
+  fecha = registro.get("Fecha")
+  fecha_texto = fecha.strftime("%Y-%m-%d") if pd.notna(fecha) else ""
+  efectiva = str(registro.get("Llamada_Efectiva", "") or "")
+  fecha_efectiva = fecha.strftime("%d/%m/%Y") if pd.notna(fecha) and efectiva == "SI" else ""
+  return [fecha_texto, "", "", "", registro.get("Cliente", ""), "", "", "", "", "", "", "", registro.get("Comuna", ""), "", "", "", "", "", "", registro.get("Responsable", ""), efectiva, "", "", "", "", registro.get("Observaciones", ""), "", "", "", fecha_efectiva]
+
+
+def generar_exportacion_responsable(df):
+  """Genera un Excel con una hoja por responsable, con las llamadas efectivas y no efectivas en el formato de columnas de BD_Componente #3, listo para subir al archivo maestro."""
+  buffer = io.BytesIO()
+  libro = xlsxwriter.Workbook(buffer, {"in_memory": True})
+  fmt_encabezado = libro.add_format({"bold": True, "font_color": "white", "bg_color": COLOR_MARCA, "border": 1, "font_name": FUENTE, "text_wrap": True})
+  fmt_celda = libro.add_format({"border": 1, "font_name": FUENTE, "font_size": 10})
+  responsables = sorted(df["Responsable"].dropna().unique()) if "Responsable" in df.columns else []
+  if not responsables:
+    libro.add_worksheet("Sin datos")
+    for responsable in responsables:
+      datos_resp = df[df["Responsable"] == responsable]
+      if "Fecha" in datos_resp.columns:
+        datos_resp = datos_resp.sort_values("Fecha")
+        hoja = libro.add_worksheet(_nombre_hoja_valido(responsable))
+        for col, encabezado in enumerate(COLUMNAS_BD_COMPONENTE):
+          hoja.write(0, col, encabezado, fmt_encabezado)
+          hoja.set_column(col, col, 18)
+          hoja.set_row(0, 32)
+          for fila, (_, registro) in enumerate(datos_resp.iterrows(), start=1):
+            valores = _fila_bd_componente(registro)
+            for col, valor in enumerate(valores):
+              hoja.write(fila, col, valor, fmt_celda)
+              libro.close()
+              buffer.seek(0)
+              return buffer.read()
+              

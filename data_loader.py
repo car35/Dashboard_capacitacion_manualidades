@@ -68,21 +68,21 @@ def _normalizar_tipos(df):
   for col in COLUMNAS_REQUERIDAS + COLUMNAS_OPCIONALES:
     if col in df.columns and df[col].dtype == object:
       df[col] = df[col].astype(str).str.strip()
-      if "Llamada_Efectiva" in df.columns:
-        df["Llamada_Efectiva"] = df["Llamada_Efectiva"].astype(str).str.strip().str.upper()
-        equivalencias = {"SI": "SI", "SI ACENTO": "SI", "S": "SI", "1": "SI", "TRUE": "SI", "YES": "SI", "NO": "NO", "N": "NO", "0": "NO", "FALSE": "NO"}
-        df["Llamada_Efectiva"] = df["Llamada_Efectiva"].map(lambda v: equivalencias.get(v, v))
-        invalidas = ~df["Llamada_Efectiva"].isin(["SI", "NO"])
-        n_invalidas = int(invalidas.sum())
-        if n_invalidas:
-          advertencias.append(f"Se descartaron {n_invalidas} fila(s) con valores no reconocidos en Llamada_Efectiva (se esperaba SI/NO).")
-          df = df[~invalidas]
-          if "Fecha" in df.columns:
-            antes = len(df)
-            df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", dayfirst=False)
-            n_malas = int(df["Fecha"].isna().sum())
-            if n_malas and n_malas < antes:
-              advertencias.append(f"{n_malas} fila(s) tienen fecha invalida o vacia; esas filas no apareceran en los analisis por fecha.")
+  if "Llamada_Efectiva" in df.columns:
+    df["Llamada_Efectiva"] = df["Llamada_Efectiva"].astype(str).str.strip().str.upper()
+    equivalencias = {"SI": "SI", "SI ACENTO": "SI", "S": "SI", "1": "SI", "TRUE": "SI", "YES": "SI", "NO": "NO", "N": "NO", "0": "NO", "FALSE": "NO"}
+    df["Llamada_Efectiva"] = df["Llamada_Efectiva"].map(lambda v: equivalencias.get(v, v))
+    invalidas = ~df["Llamada_Efectiva"].isin(["SI", "NO"])
+    n_invalidas = int(invalidas.sum())
+    if n_invalidas:
+      advertencias.append(f"Se descartaron {n_invalidas} fila(s) con valores no reconocidos en Llamada_Efectiva (se esperaba SI/NO).")
+      df = df[~invalidas]
+  if "Fecha" in df.columns:
+    antes = len(df)
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", dayfirst=False)
+    n_malas = int(df["Fecha"].isna().sum())
+    if n_malas and n_malas < antes:
+      advertencias.append(f"{n_malas} fila(s) tienen fecha invalida o vacia; esas filas no apareceran en los analisis por fecha.")
               for col in ["Responsable", "Comuna"]:
                 if col in df.columns:
                   vacias = df[col].isna() | (df[col].astype(str).str.strip() == "")

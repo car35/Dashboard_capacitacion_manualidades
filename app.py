@@ -151,7 +151,7 @@ def exportar_excel(n_clicks, datos_json, nombre_archivo, responsables, comunas, 
     raise PreventUpdate
   df = pd.read_json(io.StringIO(datos_json), orient="split")
   if "Fecha" in df.columns:
-  df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
   df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
   if df_filtrado.empty:
     raise PreventUpdate

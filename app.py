@@ -51,3 +51,26 @@ def panel_relacion():
 
 
 app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
+
+
+@app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Input("upload-datos", "contents"), State("upload-datos", "filename"), prevent_initial_call=False)
+def cargar_datos(contenido_upload, nombre_upload):
+  if contenido_upload is None:
+    resultado = cargar_desde_ruta(RUTA_DATOS_EJEMPLO)
+    nombre = "Datos de ejemplo (sample_llamadas.xlsx)"
+  else:
+    datos_bytes = decodificar_contenido_upload(contenido_upload)
+    resultado = cargar_desde_bytes(datos_bytes, nombre_upload)
+    nombre = nombre_upload
+    if not resultado.exito:
+      alerta = dbc.Alert([html.B("No se pudo cargar el archivo. "), *[html.Div(e) for e in resultado.errores]], color="danger", dismissable=True)
+      if contenido_upload is None:
+        raise PreventUpdate
+        return dash.no_update, dash.no_update, alerta
+        alertas = []
+        if resultado.advertencias:
+          alertas.append(dbc.Alert([html.B("Archivo cargado con observaciones: ")] + [html.Div(a) for a in resultado.advertencias], color="warning", dismissable=True))
+        else:
+          alertas.append(dbc.Alert(f"Archivo '{nombre}' cargado correctamente ({len(resultado.df)} filas).", color="success", dismissable=True, duration=4000))
+          return resultado.df.to_json(date_format="iso", orient="split"), nombre, alertas
+          

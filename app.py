@@ -62,15 +62,15 @@ def cargar_datos(contenido_upload, nombre_upload):
     datos_bytes = decodificar_contenido_upload(contenido_upload)
     resultado = cargar_desde_bytes(datos_bytes, nombre_upload)
     nombre = nombre_upload
-    if not resultado.exito:
-      alerta = dbc.Alert([html.B("No se pudo cargar el archivo. "), *[html.Div(e) for e in resultado.errores]], color="danger", dismissable=True)
-      if contenido_upload is None:
-        raise PreventUpdate
-        return dash.no_update, dash.no_update, alerta
-        alertas = []
-        if resultado.advertencias:
-          alertas.append(dbc.Alert([html.B("Archivo cargado con observaciones: ")] + [html.Div(a) for a in resultado.advertencias], color="warning", dismissable=True))
-        else:
-          alertas.append(dbc.Alert(f"Archivo '{nombre}' cargado correctamente ({len(resultado.df)} filas).", color="success", dismissable=True, duration=4000))
-          return resultado.df.to_json(date_format="iso", orient="split"), nombre, alertas
+  if not resultado.exito:
+    alerta = dbc.Alert([html.B("No se pudo cargar el archivo. "), *[html.Div(e) for e in resultado.errores]], color="danger", dismissable=True)
+    if contenido_upload is None:
+      raise PreventUpdate
+    return dash.no_update, dash.no_update, alerta
+  alertas = []
+  if resultado.advertencias:
+    alertas.append(dbc.Alert([html.B("Archivo cargado con observaciones: ")] + [html.Div(a) for a in resultado.advertencias], color="warning", dismissable=True))
+  else:
+    alertas.append(dbc.Alert(f"Archivo '{nombre}' cargado correctamente ({len(resultado.df)} filas).", color="success", dismissable=True, duration=4000))
+  return resultado.df.to_json(date_format="iso", orient="split"), nombre, alertas
           

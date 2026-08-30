@@ -83,14 +83,14 @@ def _normalizar_tipos(df):
     n_malas = int(df["Fecha"].isna().sum())
     if n_malas and n_malas < antes:
       advertencias.append(f"{n_malas} fila(s) tienen fecha invalida o vacia; esas filas no apareceran en los analisis por fecha.")
-              for col in ["Responsable", "Comuna"]:
-                if col in df.columns:
-                  vacias = df[col].isna() | (df[col].astype(str).str.strip() == "")
-                  if vacias.any():
-                    n_vacias = int(vacias.sum())
-                    advertencias.append(f"Se descartaron {n_vacias} fila(s) sin valor en '{col}'.")
-                    df = df[~vacias]
-                    return df, advertencias
+  for col in ["Responsable", "Comuna"]:
+    if col in df.columns:
+      vacias = df[col].isna() | (df[col].astype(str).str.strip() == "")
+      if vacias.any():
+        n_vacias = int(vacias.sum())
+        advertencias.append(f"Se descartaron {n_vacias} fila(s) sin valor en '{col}'.")
+        df = df[~vacias]
+    return df, advertencias
 
 
 def cargar_desde_bytes(contenido, nombre_archivo):
@@ -103,7 +103,7 @@ def cargar_desde_bytes(contenido, nombre_archivo):
       return ResultadoCarga(exito=False, errores=["Formato no soportado. Sube un archivo .xlsx o .csv."], nombre_archivo=nombre_archivo)
   except Exception as exc:
     return ResultadoCarga(exito=False, errores=[f"No se pudo leer el archivo: {exc}"], nombre_archivo=nombre_archivo)
-    return _procesar_dataframe(df, nombre_archivo)
+  return _procesar_dataframe(df, nombre_archivo)
 
 
 def cargar_desde_ruta(ruta):
@@ -114,7 +114,7 @@ def cargar_desde_ruta(ruta):
       df = pd.read_excel(ruta)
   except Exception as exc:
     return ResultadoCarga(exito=False, errores=[f"No se pudo leer el archivo: {exc}"])
-    return _procesar_dataframe(df, ruta)
+  return _procesar_dataframe(df, ruta)
 
 
 def _procesar_dataframe(df, nombre_archivo):
@@ -126,7 +126,7 @@ def _procesar_dataframe(df, nombre_archivo):
     errores_post = _validar_estructura(df)
     if errores_post:
       return ResultadoCarga(exito=False, errores=errores_post, advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
-      return ResultadoCarga(exito=True, df=df.reset_index(drop=True), advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
+    return ResultadoCarga(exito=True, df=df.reset_index(drop=True), advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
 
 
 def decodificar_contenido_upload(contents):

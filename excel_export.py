@@ -169,20 +169,20 @@ def generar_exportacion_responsable(df):
   responsables = sorted(df["Responsable"].dropna().unique()) if "Responsable" in df.columns else []
   if not responsables:
     libro.add_worksheet("Sin datos")
-    for responsable in responsables:
-      datos_resp = df[df["Responsable"] == responsable]
-      if "Fecha" in datos_resp.columns:
-        datos_resp = datos_resp.sort_values("Fecha")
-        hoja = libro.add_worksheet(_nombre_hoja_valido(responsable))
-        for col, encabezado in enumerate(COLUMNAS_BD_COMPONENTE):
-          hoja.write(0, col, encabezado, fmt_encabezado)
-          hoja.set_column(col, col, 18)
-          hoja.set_row(0, 32)
-          for fila, (_, registro) in enumerate(datos_resp.iterrows(), start=1):
-            valores = _fila_bd_componente(registro)
-            for col, valor in enumerate(valores):
-              hoja.write(fila, col, valor, fmt_celda)
-              libro.close()
-              buffer.seek(0)
-              return buffer.read()
+  for responsable in responsables:
+    datos_resp = df[df["Responsable"] == responsable]
+    if "Fecha" in datos_resp.columns:
+      datos_resp = datos_resp.sort_values("Fecha")
+    hoja = libro.add_worksheet(_nombre_hoja_valido(responsable))
+    for col, encabezado in enumerate(COLUMNAS_BD_COMPONENTE):
+      hoja.write(0, col, encabezado, fmt_encabezado)
+      hoja.set_column(col, col, 18)
+    hoja.set_row(0, 32)
+    for fila, (_, registro) in enumerate(datos_resp.iterrows(), start=1):
+      valores = _fila_bd_componente(registro)
+      for col, valor in enumerate(valores):
+        hoja.write(fila, col, valor, fmt_celda)
+  libro.close()
+  buffer.seek(0)
+    return buffer.read()
               

@@ -109,33 +109,33 @@ def _hoja_responsables(libro, fmt, tabla_resp):
 
 
 def _hoja_pivote(libro, fmt, pivote_pct):
-hoja = libro.add_worksheet("Responsable-Comuna")
-hoja.set_column("A:A", 22)
-if pivote_pct.empty:
-hoja.write(0, 0, "Sin datos suficientes para la tabla dinamica.", fmt["celda"])
-return
-hoja.write(0, 0, "Responsable / Comuna (% efectividad)", fmt["encabezado"])
-for c, comuna in enumerate(pivote_pct.columns, start=1):
-hoja.write(0, c, comuna, fmt["encabezado"])
-hoja.set_column(c, c, 16)
-for r, (responsable, fila) in enumerate(pivote_pct.iterrows(), start=1):
-hoja.write(r, 0, responsable, fmt["celda"])
-for c, valor in enumerate(fila, start=1):
-if pd.isna(valor):
-hoja.write_blank(r, c, None, fmt["celda"])
-else:
-hoja.write(r, c, valor / 100, fmt["celda_pct"])
+  hoja = libro.add_worksheet("Responsable-Comuna")
+  hoja.set_column("A:A", 22)
+  if pivote_pct.empty:
+    hoja.write(0, 0, "Sin datos suficientes para la tabla dinamica.", fmt["celda"])
+    return
+  hoja.write(0, 0, "Responsable / Comuna (% efectividad)", fmt["encabezado"])
+  for c, comuna in enumerate(pivote_pct.columns, start=1):
+    hoja.write(0, c, comuna, fmt["encabezado"])
+    hoja.set_column(c, c, 16)
+  for r, (responsable, fila) in enumerate(pivote_pct.iterrows(), start=1):
+    hoja.write(r, 0, responsable, fmt["celda"])
+    for c, valor in enumerate(fila, start=1):
+      if pd.isna(valor):
+        hoja.write_blank(r, c, None, fmt["celda"])
+      else:
+        hoja.write(r, c, valor / 100, fmt["celda_pct"])
 
 
 def generar_reporte_excel(df, kpis, tabla_comunas, tabla_resp, pivote_pct, nombre_fuente="Dashboard de Productividad"):
-"""Devuelve los bytes de un .xlsx ejecutivo listo para descargar."""
-buffer = io.BytesIO()
-libro = xlsxwriter.Workbook(buffer, {"in_memory": True})
-fmt = _formatos(libro)
-_hoja_resumen(libro, fmt, kpis, nombre_fuente)
-_hoja_comunas(libro, fmt, tabla_comunas)
-_hoja_responsables(libro, fmt, tabla_resp)
-_hoja_pivote(libro, fmt, pivote_pct)
-libro.close()
-buffer.seek(0)
-return buffer.read()
+  """Devuelve los bytes de un .xlsx ejecutivo listo para descargar."""
+  buffer = io.BytesIO()
+  libro = xlsxwriter.Workbook(buffer, {"in_memory": True})
+  fmt = _formatos(libro)
+  _hoja_resumen(libro, fmt, kpis, nombre_fuente)
+  _hoja_comunas(libro, fmt, tabla_comunas)
+  _hoja_responsables(libro, fmt, tabla_resp)
+  _hoja_pivote(libro, fmt, pivote_pct)
+  libro.close()
+  buffer.seek(0)
+  return buffer.read()

@@ -122,11 +122,11 @@ def _procesar_dataframe(df, nombre_archivo):
   errores = _validar_estructura(df)
   if errores:
     return ResultadoCarga(exito=False, errores=errores, advertencias=advertencias_mapeo, nombre_archivo=nombre_archivo)
-    df, advertencias_tipos = _normalizar_tipos(df)
-    errores_post = _validar_estructura(df)
-    if errores_post:
-      return ResultadoCarga(exito=False, errores=errores_post, advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
-    return ResultadoCarga(exito=True, df=df.reset_index(drop=True), advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
+  df, advertencias_tipos = _normalizar_tipos(df)
+  errores_post = _validar_estructura(df)
+  if errores_post:
+    return ResultadoCarga(exito=False, errores=errores_post, advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
+  return ResultadoCarga(exito=True, df=df.reset_index(drop=True), advertencias=advertencias_mapeo + advertencias_tipos, nombre_archivo=nombre_archivo)
 
 
 def decodificar_contenido_upload(contents):

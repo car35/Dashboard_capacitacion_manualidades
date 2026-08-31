@@ -80,19 +80,37 @@ def cargar_datos(contenido_upload, nombre_upload):
           
 
 
-@app.callback(Output("filtro-responsable", "options"), Output("filtro-comuna", "options"), Output("filtro-fechas", "min_date_allowed"), Output("filtro-fechas", "max_date_allowed"), Output("filtro-fechas", "start_date"), Output("filtro-fechas", "end_date"), Input("store-datos", "data"))
-def poblar_filtros(datos_json):
+@app.callback(Output("filtro-fechas", "min_date_allowed"), Output("filtro-fechas", "max_date_allowed"), Output("filtro-fechas", "start_date"), Output("filtro-fechas", "end_date"), Input("store-datos", "data"))
+def poblar_fechas(datos_json):
   if not datos_json:
     raise PreventUpdate
   df = pd.read_json(io.StringIO(datos_json), orient="split")
-  opciones_resp = sorted(df["Responsable"].dropna().unique())
-  opciones_comuna = sorted(df["Comuna"].dropna().unique())
-  opts_resp = [{"label": r, "value": r} for r in opciones_resp]
-  opts_comuna = [{"label": c, "value": c} for c in opciones_comuna]
   if "Fecha" in df.columns and not df["Fecha"].isna().all():
     fechas = pd.to_datetime(df["Fecha"]).dropna()
-    return opts_resp, opts_comuna, fechas.min().date(), fechas.max().date(), fechas.min().date(), fechas.max().date()
-  return opts_resp, opts_comuna, None, None, None, None
+    return fechas.min().date(), fechas.max().date(), fechas.min().date(), fechas.max().date()
+  return None, None, None, None
+
+
+@app.callback(Output("filtro-comuna", "options"), Input("store-datos", "data"), Input("filtro-responsable", "value"))
+def actualizar_opciones_comuna(datos_json, responsables):
+  if not datos_json:
+    raise PreventUpdate
+  df = pd.read_json(io.StringIO(datos_json), orient="split")
+  if responsables:
+    df = df[df["Responsable"].isin(responsables)]
+  opciones = sorted(df["Comuna"].dropna().unique())
+  return [{"label": c, "value": c} for c in opciones]
+
+
+@app.callback(Output("filtro-responsable", "options"), Input("store-datos", "data"), Input("filtro-comuna", "value"))
+def actualizar_opciones_responsable(datos_json, comunas):
+  if not datos_json:
+    raise PreventUpdate
+  df = pd.read_json(io.StringIO(datos_json), orient="split")
+  if comunas:
+    df = df[df["Comuna"].isin(comunas)]
+  opciones = sorted(df["Responsable"].dropna().unique())
+  return [{"label": r, "value": r} for r in opciones]
 
 
 def _filtrar(df, responsables, comunas, fecha_ini, fecha_fin):

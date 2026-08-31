@@ -40,7 +40,13 @@ class ResultadoCarga:
 def _mapear_columnas(df):
   advertencias = []
   mapa_normalizado = {}
+  for col in df.columns:
+    if _normalizar_texto(col).startswith("fechahoraregistroefectiva"):
+      mapa_normalizado[col] = "Fecha"
+      break
   for canonico, alias in ALIAS_COLUMNAS.items():
+    if canonico in mapa_normalizado.values():
+      continue
     objetivo = {_normalizar_texto(canonico)} | {_normalizar_texto(a) for a in alias}
     for col in df.columns:
       if _normalizar_texto(col) in objetivo:
@@ -62,6 +68,18 @@ def _validar_estructura(df):
     return errores
 
 
+def _normalizar_fecha_mixta(serie):
+  def convertir(valor):
+    if pd.isna(valor):
+      return pd.NaT
+    if isinstance(valor, pd.Timestamp):
+      return valor
+    if isinstance(valor, (int, float)) and not isinstance(valor, bool):
+      return pd.to_datetime(valor, unit="D", origin="1899-12-30")
+    return pd.to_datetime(valor, errors="coerce")
+  return serie.map(convertir)
+
+
 def _normalizar_tipos(df):
   advertencias = []
   df = df.copy()
@@ -79,7 +97,7 @@ def _normalizar_tipos(df):
       df = df[~invalidas]
   if "Fecha" in df.columns:
     antes = len(df)
-    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce", dayfirst=False)
+    df["Fecha"] = _normalizar_fecha_mixta(df["Fecha"])
     n_malas = int(df["Fecha"].isna().sum())
     if n_malas and n_malas < antes:
       advertencias.append(f"{n_malas} fila(s) tienen fecha invalida o vacia; esas filas no apareceran en los analisis por fecha.")
@@ -90,7 +108,7 @@ def _normalizar_tipos(df):
         n_vacias = int(vacias.sum())
         advertencias.append(f"Se descartaron {n_vacias} fila(s) sin valor en '{col}'.")
         df = df[~vacias]
-    return df, advertencias
+  return df, advertencias
 
 
 def _leer_excel_todas_hojas(fuente):

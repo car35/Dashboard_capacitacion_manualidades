@@ -76,6 +76,13 @@ def _normalizar_fecha_mixta(serie):
       return valor
     if isinstance(valor, (int, float)) and not isinstance(valor, bool):
       return pd.to_datetime(valor, unit="D", origin="1899-12-30")
+    if isinstance(valor, str):
+      texto = valor.strip()
+      try:
+        numero = float(texto)
+        return pd.to_datetime(numero, unit="D", origin="1899-12-30")
+      except ValueError:
+        pass
     return pd.to_datetime(valor, errors="coerce")
   return serie.map(convertir)
 

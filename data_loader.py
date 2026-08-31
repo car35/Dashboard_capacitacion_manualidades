@@ -93,12 +93,20 @@ def _normalizar_tipos(df):
     return df, advertencias
 
 
+def _leer_excel_todas_hojas(fuente):
+  hojas = pd.read_excel(fuente, sheet_name=None)
+  marcos = [df for df in hojas.values() if not df.empty]
+  if not marcos:
+    return pd.DataFrame()
+  return pd.concat(marcos, ignore_index=True, sort=False)
+
+
 def cargar_desde_bytes(contenido, nombre_archivo):
   try:
     if nombre_archivo.lower().endswith(".csv"):
       df = pd.read_csv(io.BytesIO(contenido))
     elif nombre_archivo.lower().endswith((".xlsx", ".xls", ".xlsm")):
-      df = pd.read_excel(io.BytesIO(contenido))
+      df = _leer_excel_todas_hojas(io.BytesIO(contenido))
     else:
       return ResultadoCarga(exito=False, errores=["Formato no soportado. Sube un archivo .xlsx o .csv."], nombre_archivo=nombre_archivo)
   except Exception as exc:
@@ -111,7 +119,7 @@ def cargar_desde_ruta(ruta):
     if ruta.lower().endswith(".csv"):
       df = pd.read_csv(ruta)
     else:
-      df = pd.read_excel(ruta)
+      df = _leer_excel_todas_hojas(ruta)
   except Exception as exc:
     return ResultadoCarga(exito=False, errores=[f"No se pudo leer el archivo: {exc}"])
   return _procesar_dataframe(df, ruta)

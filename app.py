@@ -15,7 +15,7 @@ from dash.exceptions import PreventUpdate
 import charts
 import kpi_engine
 from data_loader import cargar_desde_bytes, cargar_desde_ruta, decodificar_contenido_upload
-from excel_export import generar_reporte_excel, generar_exportacion_responsable
+from excel_export import generar_reporte_excel, generar_exportacion_responsable_zip
 
 RUTA_DATOS_EJEMPLO = "data/sample_llamadas.xlsx"
 
@@ -178,8 +178,7 @@ def exportar_por_responsable(n_clicks, datos_json, responsables, comunas, fecha_
   df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
   if df_filtrado.empty:
     return dash.no_update, dbc.Alert("No hay llamadas para exportar con los filtros seleccionados.", color="warning", dismissable=True)
-  contenido = generar_exportacion_responsable(df_filtrado)
-  nombre_salida = f"Llamadas_por_Responsable_{datetime.now():%Y%m%d_%H%M}.xlsx"
+  contenido, nombre_salida = generar_exportacion_responsable_zip(df_filtrado)
   mensaje = dbc.Alert(f"Archivo generado con {df_filtrado['Responsable'].nunique()} responsable(s) y {len(df_filtrado)} llamada(s).", color="success", dismissable=True, duration=5000)
   return dcc.send_bytes(contenido, nombre_salida), mensaje
         

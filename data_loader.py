@@ -13,7 +13,7 @@ COLUMNAS_REQUERIDAS = ["Responsable", "Comuna", "Llamada_Efectiva"]
 COLUMNAS_OPCIONALES = ["Fecha", "Cliente", "Observaciones"]
 
 ALIAS_COLUMNAS = {
-  "Responsable": ["responsable", "agente", "asesor", "gestor", "responsablellamada"],
+  "Responsable": ["responsable", "agente", "asesor", "gestor", "responsablellamada", "responsablellamada"],
   "Comuna": ["comuna", "zona", "sector", "barrio"],
   "Llamada_Efectiva": ["llamadaefectiva", "efectiva", "esefectiva", "llamada_efectiva", "resultado", "efectividad"],
   "Fecha": ["fecha", "fecharegistro", "fecha_registro", "fechallamada"],

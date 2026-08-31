@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import zipfile
 from datetime import datetime
 
 import pandas as pd
@@ -34,6 +35,54 @@ def _formatos(libro):
 def _hoja_resumen(libro, fmt, kpis, nombre_fuente):
   hoja = libro.add_worksheet("Resumen Ejecutivo")
   hoja.hide_gridlines(2)
+
+def _nombre_archivo_valido(texto):
+  invalidos = ["/", "\\\\", "*", "?", "[", "]", ":", "\"", "<", ">", "|"]
+  limpio = str(texto)
+  for caracter in invalidos:
+    limpio = limpio.replace(caracter, "-")
+  limpio = limpio.strip().replace(" ", "_")
+  return limpio[:80] if limpio else "Responsable"
+
+
+def _generar_hoja_responsable_bytes(datos_resp, responsable):
+  """Genera un .xlsx individual (una sola hoja) para un responsable, en formato BD_Componente #3."""
+  buffer = io.BytesIO()
+  libro = xlsxwriter.Workbook(buffer, {"in_memory": True})
+  fmt_encabezado = libro.add_format({"bold": True, "font_color": "white", "bg_color": COLOR_MARCA, "border": 1, "font_name": FUENTE, "text_wrap": True})
+  fmt_celda = libro.add_format({"border": 1, "font_name": FUENTE, "font_size": 10})
+  hoja = libro.add_worksheet(_nombre_archivo_valido(responsable)[:31] or "Responsable")
+  for col, encabezado in enumerate(COLUMNAS_BD_COMPONENTE):
+    hoja.write(0, col, encabezado, fmt_encabezado)
+    hoja.set_column(col, col, 18)
+  hoja.set_row(0, 32)
+  for fila, (_, registro) in enumerate(datos_resp.iterrows(), start=1):
+    valores = _fila_bd_componente(registro)
+    for col, valor in enumerate(valores):
+      hoja.write(fila, col, valor, fmt_celda)
+  libro.close()
+  buffer.seek(0)
+  return buffer.read()
+
+
+def generar_exportacion_responsable_zip(df):
+  """Genera un ZIP que contiene una carpeta con un archivo Excel individual por cada responsable, en el formato de columnas de BD_Componente #3."""
+  nombre_carpeta = f"Exportacion_Llamadas_{datetime.now():%Y%m%d_%H%M}"
+  buffer_zip = io.BytesIO()
+  responsables = sorted(df["Responsable"].dropna().unique()) if "Responsable" in df.columns else []
+  with zipfile.ZipFile(buffer_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+    if not responsables:
+      zf.writestr(f"{nombre_carpeta}/Sin_datos.txt", "No hay llamadas para exportar con los filtros seleccionados.")
+    for responsable in responsables:
+      datos_resp = df[df["Responsable"] == responsable]
+      if "Fecha" in datos_resp.columns:
+        datos_resp = datos_resp.sort_values("Fecha")
+      contenido_excel = _generar_hoja_responsable_bytes(datos_resp, responsable)
+      nombre_archivo = _nombre_archivo_valido(responsable)
+      zf.writestr(f"{nombre_carpeta}/{nombre_archivo}.xlsx", contenido_excel)
+  buffer_zip.seek(0)
+  return buffer_zip.read(), f"{nombre_carpeta}.zip"
+
   hoja.set_column("A:A", 3)
   hoja.set_column("B:I", 18)
   hoja.merge_range("B2:I2", "REPORTE EJECUTIVO DE PRODUCTIVIDAD DE LLAMADAS", fmt["titulo"])

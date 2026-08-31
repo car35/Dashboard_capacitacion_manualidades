@@ -168,24 +168,23 @@ def exportar_excel(n_clicks, datos_json, nombre_archivo, responsables, comunas, 
   return dcc.send_bytes(contenido, nombre_salida)
 
 
-if __name__ == "__main__":
-  app.run(debug=True, host="0.0.0.0", port=8050)
-  
-
-
-
 @app.callback(Output("descarga-excel-responsable", "data"), Output("mensaje-exportar-responsable", "children"), Input("btn-exportar-responsable", "n_clicks"), State("store-datos", "data"), State("filtro-responsable", "value"), State("filtro-comuna", "value"), State("filtro-fechas", "start_date"), State("filtro-fechas", "end_date"), prevent_initial_call=True)
 def exportar_por_responsable(n_clicks, datos_json, responsables, comunas, fecha_ini, fecha_fin):
   if not datos_json:
     raise PreventUpdate
-    df = pd.read_json(io.StringIO(datos_json), orient="split")
-    if "Fecha" in df.columns:
-      df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-      df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
-      if df_filtrado.empty:
-        return dash.no_update, dbc.Alert("No hay llamadas para exportar con los filtros seleccionados.", color="warning", dismissable=True)
-        contenido = generar_exportacion_responsable(df_filtrado)
-        nombre_salida = f"Llamadas_por_Responsable_{datetime.now():%Y%m%d_%H%M}.xlsx"
-        mensaje = dbc.Alert(f"Archivo generado con {df_filtrado['Responsable'].nunique()} responsable(s) y {len(df_filtrado)} llamada(s).", color="success", dismissable=True, duration=5000)
-        return dcc.send_bytes(contenido, nombre_salida), mensaje
+  df = pd.read_json(io.StringIO(datos_json), orient="split")
+  if "Fecha" in df.columns:
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+  df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
+  if df_filtrado.empty:
+  return dash.no_update, dbc.Alert("No hay llamadas para exportar con los filtros seleccionados.", color="warning", dismissable=True)
+  contenido = generar_exportacion_responsable(df_filtrado)
+  nombre_salida = f"Llamadas_por_Responsable_{datetime.now():%Y%m%d_%H%M}.xlsx"
+  mensaje = dbc.Alert(f"Archivo generado con {df_filtrado['Responsable'].nunique()} responsable(s) y {len(df_filtrado)} llamada(s).", color="success", dismissable=True, duration=5000)
+  return dcc.send_bytes(contenido, nombre_salida), mensaje
         
+
+
+if __name__ == "__main__":
+  app.run(debug=True, host="0.0.0.0", port=8050)
+  

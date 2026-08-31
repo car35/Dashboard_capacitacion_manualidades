@@ -15,7 +15,7 @@ from dash.exceptions import PreventUpdate
 import charts
 import kpi_engine
 from data_loader import cargar_desde_bytes, cargar_desde_ruta, decodificar_contenido_upload
-from excel_export import generar_reporte_excel
+from excel_export import generar_reporte_excel, generar_exportacion_responsable
 
 RUTA_DATOS_EJEMPLO = "data/sample_llamadas.xlsx"
 
@@ -50,7 +50,11 @@ def panel_relacion():
   return html.Div([dbc.Row(dbc.Col(dcc.Graph(id="grafico-pivote-heatmap", config={"displayModeBar": False}), md=12), className="g-3 mb-3"), dbc.Card(dbc.CardBody([html.H6("Tabla dinamica: % de efectividad por Responsable y Comuna", className="mb-3"), html.Div(id="tabla-pivote")]), className="shadow-sm")])
 
 
-app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
+def panel_exportar_responsable():
+  return html.Div([dbc.Row(dbc.Col(dbc.Card(dbc.CardBody([html.H6("Exportar llamadas por responsable", className="mb-2"), html.P("Genera un archivo Excel con una hoja por cada responsable, con las llamadas efectivas y no efectivas en el formato de columnas de BD_Componente #3, listo para copiar y subir al archivo maestro.", className="text-muted small"), dbc.Button([html.I(className="bi bi-download me-2"), "Exportar por responsable"], id="btn-exportar-responsable", color="primary"), html.Div(id="mensaje-exportar-responsable", className="mt-2"), dcc.Download(id="descarga-excel-responsable")]), className="shadow-sm"), md=8), className="g-3 mb-3")])
+
+
+app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
 
 
 @app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Input("upload-datos", "contents"), State("upload-datos", "filename"), prevent_initial_call=False)
@@ -167,3 +171,21 @@ def exportar_excel(n_clicks, datos_json, nombre_archivo, responsables, comunas, 
 if __name__ == "__main__":
   app.run(debug=True, host="0.0.0.0", port=8050)
   
+
+
+
+@app.callback(Output("descarga-excel-responsable", "data"), Output("mensaje-exportar-responsable", "children"), Input("btn-exportar-responsable", "n_clicks"), State("store-datos", "data"), State("filtro-responsable", "value"), State("filtro-comuna", "value"), State("filtro-fechas", "start_date"), State("filtro-fechas", "end_date"), prevent_initial_call=True)
+def exportar_por_responsable(n_clicks, datos_json, responsables, comunas, fecha_ini, fecha_fin):
+  if not datos_json:
+    raise PreventUpdate
+    df = pd.read_json(io.StringIO(datos_json), orient="split")
+    if "Fecha" in df.columns:
+      df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+      df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
+      if df_filtrado.empty:
+        return dash.no_update, dbc.Alert("No hay llamadas para exportar con los filtros seleccionados.", color="warning", dismissable=True)
+        contenido = generar_exportacion_responsable(df_filtrado)
+        nombre_salida = f"Llamadas_por_Responsable_{datetime.now():%Y%m%d_%H%M}.xlsx"
+        mensaje = dbc.Alert(f"Archivo generado con {df_filtrado['Responsable'].nunique()} responsable(s) y {len(df_filtrado)} llamada(s).", color="success", dismissable=True, duration=5000)
+        return dcc.send_bytes(contenido, nombre_salida), mensaje
+        

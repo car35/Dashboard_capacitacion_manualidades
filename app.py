@@ -177,7 +177,7 @@ def exportar_por_responsable(n_clicks, datos_json, responsables, comunas, fecha_
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
   df_filtrado = _filtrar(df, responsables, comunas, fecha_ini, fecha_fin)
   if df_filtrado.empty:
-  return dash.no_update, dbc.Alert("No hay llamadas para exportar con los filtros seleccionados.", color="warning", dismissable=True)
+    return dash.no_update, dbc.Alert("No hay llamadas para exportar con los filtros seleccionados.", color="warning", dismissable=True)
   contenido = generar_exportacion_responsable(df_filtrado)
   nombre_salida = f"Llamadas_por_Responsable_{datetime.now():%Y%m%d_%H%M}.xlsx"
   mensaje = dbc.Alert(f"Archivo generado con {df_filtrado['Responsable'].nunique()} responsable(s) y {len(df_filtrado)} llamada(s).", color="success", dismissable=True, duration=5000)

@@ -106,6 +106,41 @@ def verificar_bd():
     return "Error", 500
 
 
+@server.route("/admin/respaldo")
+def respaldo_completo():
+  if not current_user.is_authenticated or not current_user.es_administrador:
+    return "No autorizado", 403
+  import zipfile
+  engine_r = data_loader.obtener_engine()
+  sesion_r = data_loader.obtener_sesion(engine_r)
+  buffer_zip = io.BytesIO()
+  with zipfile.ZipFile(buffer_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+    usuarios = sesion_r.query(data_loader.Usuario).all()
+    filas_usuarios = [{"Nombre": u.nombre, "Correo": u.correo, "Administrador": u.es_administrador, "Fecha_creacion": str(u.fecha_creacion)} for u in usuarios]
+    buffer_usuarios = io.BytesIO()
+    pd.DataFrame(filas_usuarios).to_excel(buffer_usuarios, index=False)
+    zf.writestr("usuarios.xlsx", buffer_usuarios.getvalue())
+    proyectos = sesion_r.query(data_loader.Proyecto).all()
+    for proyecto in proyectos:
+      if not proyecto.datos_json:
+        continue
+      df_p = pd.read_json(io.StringIO(proyecto.datos_json), orient="split")
+      buffer_proy = io.BytesIO()
+      df_p.to_excel(buffer_proy, index=False)
+      nombre_limpio = "".join(c if c.isalnum() or c in " -_" else "-" for c in proyecto.nombre)[:80]
+      zf.writestr(f"proyectos/{nombre_limpio}.xlsx", buffer_proy.getvalue())
+    permisos = sesion_r.query(data_loader.PermisoProyecto).all()
+    filas_permisos = [{"Proyecto_id": pp.proyecto_id, "Usuario_id": pp.usuario_id, "Rol": pp.rol} for pp in permisos]
+    buffer_permisos = io.BytesIO()
+    pd.DataFrame(filas_permisos).to_excel(buffer_permisos, index=False)
+    zf.writestr("permisos.xlsx", buffer_permisos.getvalue())
+  sesion_r.close()
+  buffer_zip.seek(0)
+  nombre_zip = f"Respaldo_Dashboard_{datetime.now():%Y%m%d_%H%M}.zip"
+  return buffer_zip.getvalue(), 200, {"Content-Type": "application/zip", "Content-Disposition": f"attachment; filename={nombre_zip}"}
+
+
+
 
 
 
@@ -403,7 +438,8 @@ def cargar_panel_administracion(tab_activo, n_clicks_usuario, n_clicks_compartir
   return html.Div([
     dbc.Card(dbc.CardBody([html.H6("Crear nueva cuenta", className="mb-3"), dbc.Row([dbc.Col(dcc.Input(id="admin-nombre-nuevo", type="text", placeholder="Nombre", className="form-control"), md=3), dbc.Col(dcc.Input(id="admin-correo-nuevo", type="email", placeholder="Correo", className="form-control"), md=3), dbc.Col(dcc.Input(id="admin-contrasena-nueva", type="password", placeholder="Contrasena temporal", className="form-control"), md=3), dbc.Col(dbc.Button("Crear cuenta", id="btn-admin-crear-usuario", color="primary", className="w-100"), md=3)], className="g-2"), html.Div(id="admin-mensaje-usuario", className="mt-2")]), className="shadow-sm mb-3"),
     dbc.Card(dbc.CardBody([html.H6("Compartir proyecto", className="mb-3"), dbc.Row([dbc.Col(dcc.Dropdown(id="admin-selector-proyecto", options=opciones_proyectos, placeholder="Proyecto"), md=4), dbc.Col(dcc.Dropdown(id="admin-selector-usuario", options=opciones_usuarios, placeholder="Usuario"), md=4), dbc.Col(dcc.Dropdown(id="admin-selector-rol", options=[{"label": "Visualizador", "value": "visualizador"}, {"label": "Editor", "value": "editor"}], placeholder="Rol", value="visualizador"), md=2), dbc.Col(dbc.Button("Compartir", id="btn-admin-compartir", color="primary", className="w-100"), md=2)], className="g-2"), html.Div(id="admin-mensaje-compartir", className="mt-2")]), className="shadow-sm mb-3"),
-    dbc.Card(dbc.CardBody([html.H6("Usuarios registrados", className="mb-3"), tabla_usuarios]), className="shadow-sm"),
+    dbc.Card(dbc.CardBody([html.H6("Usuarios registrados", className="mb-3"), tabla_usuarios]), className="shadow-sm mb-3"),
+    dbc.Card(dbc.CardBody([html.H6("Respaldo de datos", className="mb-2"), html.P("Descarga una copia completa de todos los proyectos, usuarios y permisos, por si necesitas recuperarlos.", className="text-muted small"), html.A(dbc.Button([html.I(className="bi bi-cloud-download me-2"), "Descargar respaldo completo"], color="secondary"), href="/admin/respaldo")]), className="shadow-sm"),
   ])
 
 

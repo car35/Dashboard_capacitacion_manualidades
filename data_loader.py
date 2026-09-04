@@ -254,11 +254,17 @@ class PermisoProyecto(BaseAuth):
   __table_args__ = (_UniqueConstraint("proyecto_id", "usuario_id"),)
 
 
+_engine_cache = None
+
+
 def obtener_engine():
-  url_bd = _os.environ.get("DATABASE_URL", "sqlite:///dashboard_local.db")
-  if url_bd.startswith("postgres://"):
-    url_bd = url_bd.replace("postgres://", "postgresql://", 1)
-  return _create_engine(url_bd)
+  global _engine_cache
+  if _engine_cache is None:
+    url_bd = _os.environ.get("DATABASE_URL", "sqlite:///dashboard_local.db")
+    if url_bd.startswith("postgres://"):
+      url_bd = url_bd.replace("postgres://", "postgresql://", 1)
+    _engine_cache = _create_engine(url_bd, pool_size=3, max_overflow=2, pool_pre_ping=True, pool_recycle=280)
+  return _engine_cache
 
 
 def inicializar_bd(engine):

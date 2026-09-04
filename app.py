@@ -178,7 +178,11 @@ def panel_validacion():
   return html.Div([dbc.Row(dbc.Col(dcc.Upload(id="upload-validacion", children=dbc.Button([html.I(className="bi bi-upload me-2"), "Cargar reporte de validacion"], color="primary", outline=True), multiple=False), md=4), className="mb-3"), html.Div(id="zona-alertas-validacion"), dbc.Row([dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-telephone me-2"), html.Span("Llamadas reales totales", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-total", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3), dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-speedometer2 me-2"), html.Span("% Cumplimiento promedio", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-cumplimiento", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3), dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-x-circle me-2"), html.Span("Llamadas faltantes", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-faltantes", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3), dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-exclamation-triangle me-2"), html.Span("Mal tipificadas", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-mal-tipificadas", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3)], className="g-3 mb-3"), dbc.Card(dbc.CardBody(dcc.Graph(id="grafico-validacion-cumplimiento", config={"displayModeBar": False})), className="shadow-sm mb-3"), dbc.Card(dbc.CardBody([html.H6("Llamadas faltantes (no encontradas en la base de datos)", className="mb-3"), html.Div(id="tabla-validacion-faltantes")]), className="shadow-sm mb-3"), dbc.Card(dbc.CardBody([html.H6("Llamadas mal tipificadas", className="mb-3"), html.Div(id="tabla-validacion-mal-tipificadas")]), className="shadow-sm")])
 
 
-app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar"), dbc.Tab(panel_validacion(), label="Validacion de Llamadas", tab_id="tab-validacion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
+def panel_administracion():
+  return html.Div(id="contenido-administracion")
+
+
+app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar"), dbc.Tab(panel_validacion(), label="Validacion de Llamadas", tab_id="tab-validacion"), dbc.Tab(panel_administracion(), label="Administracion", tab_id="tab-administracion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
 
 
 @app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Output("selector-proyecto", "options"), Output("selector-proyecto", "value"), Input("upload-datos", "contents"), Input("selector-proyecto", "value"), State("upload-datos", "filename"), State("nombre-proyecto-nuevo", "value"), prevent_initial_call=False)
@@ -380,6 +384,62 @@ def cargar_y_mostrar_validacion(contenido_upload, nombre_archivo):
   tabla_mal = _tabla_dash(df_mal[cols_mal_tip]) if not df_mal.empty else mensaje_vacio
   alerta = dbc.Alert(f"Archivo '{nombre_archivo}' procesado correctamente ({len(resumen)} responsable(s)).", color="success", dismissable=True, duration=4000)
   return alerta, f"{total:,}", f"{cumplimiento:.1f}%", f"{faltantes_n:,}", f"{mal_tip_n:,}", fig, tabla_falt, tabla_mal
+
+
+@app.callback(Output("contenido-administracion", "children"), Input("tabs-principales", "active_tab"), Input("btn-admin-crear-usuario", "n_clicks"), Input("btn-admin-compartir", "n_clicks"), prevent_initial_call=False)
+def cargar_panel_administracion(tab_activo, n_clicks_usuario, n_clicks_compartir):
+  if tab_activo != "tab-administracion":
+    raise PreventUpdate
+  if not current_user.is_authenticated or not current_user.es_administrador:
+    return dbc.Alert("No tienes permisos para acceder a esta seccion.", color="danger")
+  engine_a = data_loader.obtener_engine()
+  sesion_a = data_loader.obtener_sesion(engine_a)
+  usuarios = sesion_a.query(data_loader.Usuario).all()
+  proyectos = sesion_a.query(data_loader.Proyecto).all()
+  opciones_usuarios = [{"label": f"{u.nombre} ({u.correo})", "value": u.id} for u in usuarios]
+  opciones_proyectos = [{"label": p.nombre, "value": p.id} for p in proyectos]
+  filas_usuarios = [{"Nombre": u.nombre, "Correo": u.correo, "Administrador": "Si" if u.es_administrador else "No"} for u in usuarios]
+  sesion_a.close()
+  tabla_usuarios = _tabla_dash(pd.DataFrame(filas_usuarios)) if filas_usuarios else html.Div("No hay usuarios.", className="text-muted")
+  return html.Div([
+    dbc.Card(dbc.CardBody([html.H6("Crear nueva cuenta", className="mb-3"), dbc.Row([dbc.Col(dcc.Input(id="admin-nombre-nuevo", type="text", placeholder="Nombre", className="form-control"), md=3), dbc.Col(dcc.Input(id="admin-correo-nuevo", type="email", placeholder="Correo", className="form-control"), md=3), dbc.Col(dcc.Input(id="admin-contrasena-nueva", type="password", placeholder="Contrasena temporal", className="form-control"), md=3), dbc.Col(dbc.Button("Crear cuenta", id="btn-admin-crear-usuario", color="primary", className="w-100"), md=3)], className="g-2"), html.Div(id="admin-mensaje-usuario", className="mt-2")]), className="shadow-sm mb-3"),
+    dbc.Card(dbc.CardBody([html.H6("Compartir proyecto", className="mb-3"), dbc.Row([dbc.Col(dcc.Dropdown(id="admin-selector-proyecto", options=opciones_proyectos, placeholder="Proyecto"), md=4), dbc.Col(dcc.Dropdown(id="admin-selector-usuario", options=opciones_usuarios, placeholder="Usuario"), md=4), dbc.Col(dcc.Dropdown(id="admin-selector-rol", options=[{"label": "Visualizador", "value": "visualizador"}, {"label": "Editor", "value": "editor"}], placeholder="Rol", value="visualizador"), md=2), dbc.Col(dbc.Button("Compartir", id="btn-admin-compartir", color="primary", className="w-100"), md=2)], className="g-2"), html.Div(id="admin-mensaje-compartir", className="mt-2")]), className="shadow-sm mb-3"),
+    dbc.Card(dbc.CardBody([html.H6("Usuarios registrados", className="mb-3"), tabla_usuarios]), className="shadow-sm"),
+  ])
+
+
+@app.callback(Output("admin-mensaje-usuario", "children"), Input("btn-admin-crear-usuario", "n_clicks"), State("admin-nombre-nuevo", "value"), State("admin-correo-nuevo", "value"), State("admin-contrasena-nueva", "value"), prevent_initial_call=True)
+def crear_usuario_admin(n_clicks, nombre, correo, contrasena):
+  if not current_user.is_authenticated or not current_user.es_administrador:
+    return dbc.Alert("No autorizado.", color="danger")
+  if not nombre or not correo or not contrasena or len(contrasena) < 8:
+    return dbc.Alert("Completa todos los campos. La contrasena debe tener al menos 8 caracteres.", color="warning")
+  engine_a = data_loader.obtener_engine()
+  sesion_a = data_loader.obtener_sesion(engine_a)
+  existente = sesion_a.query(data_loader.Usuario).filter_by(correo=correo.strip().lower()).first()
+  if existente:
+    sesion_a.close()
+    return dbc.Alert("Ya existe una cuenta con ese correo.", color="warning")
+  data_loader.crear_usuario(sesion_a, correo, nombre, contrasena)
+  sesion_a.close()
+  return dbc.Alert(f"Cuenta creada para {nombre} ({correo}).", color="success", dismissable=True, duration=5000)
+
+
+@app.callback(Output("admin-mensaje-compartir", "children"), Input("btn-admin-compartir", "n_clicks"), State("admin-selector-proyecto", "value"), State("admin-selector-usuario", "value"), State("admin-selector-rol", "value"), prevent_initial_call=True)
+def compartir_proyecto_admin(n_clicks, proyecto_id, usuario_id, rol):
+  if not current_user.is_authenticated or not current_user.es_administrador:
+    return dbc.Alert("No autorizado.", color="danger")
+  if not proyecto_id or not usuario_id or not rol:
+    return dbc.Alert("Selecciona proyecto, usuario y rol.", color="warning")
+  engine_a = data_loader.obtener_engine()
+  sesion_a = data_loader.obtener_sesion(engine_a)
+  data_loader.compartir_proyecto(sesion_a, proyecto_id, usuario_id, rol)
+  proyecto = sesion_a.query(data_loader.Proyecto).filter_by(id=proyecto_id).first()
+  usuario = sesion_a.query(data_loader.Usuario).filter_by(id=usuario_id).first()
+  nombre_proyecto = proyecto.nombre if proyecto else "?"
+  nombre_usuario = usuario.nombre if usuario else "?"
+  sesion_a.close()
+  return dbc.Alert(f"Proyecto '{nombre_proyecto}' compartido con {nombre_usuario} como {rol}.", color="success", dismissable=True, duration=5000)
 
 
 if __name__ == "__main__":

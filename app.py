@@ -6,6 +6,7 @@ import io
 from datetime import datetime
 
 import dash
+from flask import request
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -38,6 +39,41 @@ def verificar_bd():
   except Exception as error:
     return f"Error de conexion: {type(error).__name__}: {error}", 500
 
+
+
+
+@server.route("/configuracion-inicial", methods=["GET", "POST"])
+def configuracion_inicial():
+  engine = data_loader.obtener_engine()
+  data_loader.inicializar_bd(engine)
+  sesion = data_loader.obtener_sesion(engine)
+  total_usuarios = sesion.query(data_loader.Usuario).count()
+  if total_usuarios > 0:
+    sesion.close()
+    return "Ya existe al menos un usuario registrado. Esta pagina de configuracion inicial ya no esta disponible.", 403
+  if request.method == "POST":
+    correo = request.form.get("correo", "").strip()
+    nombre = request.form.get("nombre", "").strip()
+    contrasena = request.form.get("contrasena", "")
+    if not correo or not nombre or len(contrasena) < 8:
+      sesion.close()
+      return "Datos invalidos. La contrasena debe tener al menos 8 caracteres. <a href=\"/configuracion-inicial\">Volver</a>", 400
+    data_loader.crear_usuario(sesion, correo, nombre, contrasena, es_administrador=True)
+    sesion.close()
+    return "Cuenta de administrador creada correctamente. Ya puedes cerrar esta pagina e iniciar sesion."
+  sesion.close()
+  return """
+  <html><body style="font-family: sans-serif; max-width: 400px; margin: 60px auto;">
+  <h2>Configuracion inicial</h2>
+  <p>Crea la primera cuenta de administrador del dashboard.</p>
+  <form method="POST">
+    <label>Nombre:<br><input type="text" name="nombre" required style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+    <label>Correo:<br><input type="email" name="correo" required style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+    <label>Contrasena (minimo 8 caracteres):<br><input type="password" name="contrasena" required minlength="8" style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+    <button type="submit" style="padding:10px 20px;">Crear cuenta</button>
+  </form>
+  </body></html>
+  """
 
 def tarjeta_kpi(kpi_id, etiqueta, icono):
   return dbc.Card(dbc.CardBody([html.Div([html.I(className=f"bi {icono} kpi-icono"), html.Span(etiqueta, className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id=kpi_id, className="kpi-valor")]), className="tarjeta-kpi shadow-sm")

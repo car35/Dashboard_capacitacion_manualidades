@@ -179,3 +179,13 @@ def grafico_cumplimiento_responsable(df_resumen):
   fig = go.Figure(go.Bar(x=datos[columna_valor], y=datos[columna_nombre], orientation="h", marker_color=colores, text=datos[columna_valor].map(lambda v: f"{v:.1f}%"), textposition="outside"))
   fig.update_layout(title="% Cumplimiento de reporte por responsable", xaxis_title="% Cumplimiento", margin=dict(l=10, r=10, t=40, b=10), height=max(300, 40 * len(datos)))
   return fig
+
+
+def grafico_cumplimiento_responsable(df_resumen):
+  columna_valor = "% Cumplimiento de reporte"
+  columna_nombre = "Responsable / Gestor"
+  datos = df_resumen.sort_values(columna_valor, ascending=True)
+  colores = [COLOR_SI if v >= 90 else (COLOR_ACENTO if v >= 70 else COLOR_NO) for v in datos[columna_valor]]
+  fig = go.Figure(go.Bar(x=datos[columna_valor], y=datos[columna_nombre], orientation="h", marker_color=colores, text=datos[columna_valor].map(lambda v: f"{v:.1f}%"), textposition="outside"))
+  fig.update_layout(title="% Cumplimiento de reporte por responsable", xaxis_title="% Cumplimiento", margin=dict(l=10, r=10, t=40, b=10), height=max(300, 40 * len(datos)))
+  return fig

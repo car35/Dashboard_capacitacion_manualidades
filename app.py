@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import io
+import os
 from datetime import datetime
 
 import dash
-from flask import request
+from flask import request, redirect
+from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -23,6 +25,72 @@ RUTA_DATOS_EJEMPLO = "data/sample_llamadas.xlsx"
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY, dbc.icons.BOOTSTRAP], title="Dashboard de Productividad de Llamadas", suppress_callback_exceptions=True)
 server = app.server
+server.secret_key = os.environ.get("SECRET_KEY", "clave-temporal-cambiar-en-produccion")
+
+login_manager = LoginManager()
+login_manager.init_app(server)
+login_manager.login_view = "login"
+
+
+@login_manager.user_loader
+def cargar_usuario_sesion(user_id):
+  engine_auth = data_loader.obtener_engine()
+  sesion_auth = data_loader.obtener_sesion(engine_auth)
+  usuario = sesion_auth.get(data_loader.Usuario, int(user_id))
+  sesion_auth.close()
+  return usuario
+
+
+RUTAS_PUBLICAS = ("/login", "/logout", "/configuracion-inicial", "/verificar-bd", "/assets")
+
+
+@server.before_request
+def exigir_login():
+  if any(request.path.startswith(ruta) for ruta in RUTAS_PUBLICAS):
+    return None
+  if not current_user.is_authenticated:
+    return redirect("/login")
+
+
+@server.route("/login", methods=["GET", "POST"])
+def login():
+  if request.method == "POST":
+    correo = request.form.get("correo", "").strip()
+    contrasena = request.form.get("contrasena", "")
+    engine_auth = data_loader.obtener_engine()
+    sesion_auth = data_loader.obtener_sesion(engine_auth)
+    usuario = data_loader.verificar_credenciales(sesion_auth, correo, contrasena)
+    sesion_auth.close()
+    if usuario:
+      login_user(usuario)
+      return redirect("/")
+    return """
+    <html><body style="font-family: sans-serif; max-width: 400px; margin: 60px auto;">
+    <h2>Iniciar sesion</h2>
+    <p style="color: red;">Correo o contrasena incorrectos.</p>
+    <form method="POST">
+      <label>Correo:<br><input type="email" name="correo" required style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+      <label>Contrasena:<br><input type="password" name="contrasena" required style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+      <button type="submit" style="padding:10px 20px;">Entrar</button>
+    </form>
+    </body></html>
+    """, 401
+  return """
+  <html><body style="font-family: sans-serif; max-width: 400px; margin: 60px auto;">
+  <h2>Iniciar sesion</h2>
+  <form method="POST">
+    <label>Correo:<br><input type="email" name="correo" required style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+    <label>Contrasena:<br><input type="password" name="contrasena" required style="width:100%; padding:8px; margin-bottom:12px;"></label><br>
+    <button type="submit" style="padding:10px 20px;">Entrar</button>
+  </form>
+  </body></html>
+  """
+
+
+@server.route("/logout")
+def logout():
+  logout_user()
+  return redirect("/login")
 
 
 @server.route("/verificar-bd")

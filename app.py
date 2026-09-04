@@ -34,11 +34,15 @@ login_manager.login_view = "login"
 
 @login_manager.user_loader
 def cargar_usuario_sesion(user_id):
-  engine_auth = data_loader.obtener_engine()
-  sesion_auth = data_loader.obtener_sesion(engine_auth)
-  usuario = sesion_auth.get(data_loader.Usuario, int(user_id))
-  sesion_auth.close()
-  return usuario
+  try:
+    engine_auth = data_loader.obtener_engine()
+    data_loader.inicializar_bd(engine_auth)
+    sesion_auth = data_loader.obtener_sesion(engine_auth)
+    usuario = sesion_auth.get(data_loader.Usuario, int(user_id))
+    sesion_auth.close()
+    return usuario
+  except Exception:
+    return None
 
 
 RUTAS_PUBLICAS = ("/login", "/logout", "/configuracion-inicial", "/verificar-bd", "/assets")
@@ -95,15 +99,18 @@ def logout():
 
 @server.route("/verificar-bd")
 def verificar_bd():
+  tiene_url = "DATABASE_URL" in os.environ
   try:
     from sqlalchemy import text
     engine = data_loader.obtener_engine()
+    data_loader.inicializar_bd(engine)
     sesion = data_loader.obtener_sesion(engine)
     sesion.execute(text("SELECT 1"))
+    motor = engine.url.get_backend_name()
     sesion.close()
-    return "OK"
-  except Exception:
-    return "Error", 500
+    return f"OK. DATABASE_URL presente: {tiene_url}. Motor: {motor}"
+  except Exception as e:
+    return f"Error. DATABASE_URL presente: {tiene_url}. {type(e).__name__}", 500
 
 
 @server.errorhandler(500)

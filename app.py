@@ -106,6 +106,13 @@ def verificar_bd():
     return "Error", 500
 
 
+@server.errorhandler(500)
+def manejar_error_500(error):
+  import traceback
+  return "<pre>" + traceback.format_exc() + "</pre>", 500
+
+
+
 @server.route("/admin/respaldo")
 def respaldo_completo():
   if not current_user.is_authenticated or not current_user.es_administrador:

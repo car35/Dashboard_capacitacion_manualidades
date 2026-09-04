@@ -14,7 +14,7 @@ from dash.exceptions import PreventUpdate
 
 import charts
 import kpi_engine
-from data_loader import cargar_desde_bytes, cargar_desde_ruta, decodificar_contenido_upload
+from data_loader import cargar_desde_bytes, cargar_desde_ruta, cargar_validacion, decodificar_contenido_upload
 from excel_export import generar_reporte_excel, generar_exportacion_responsable_zip
 
 RUTA_DATOS_EJEMPLO = "data/sample_llamadas.xlsx"
@@ -54,7 +54,11 @@ def panel_exportar_responsable():
   return html.Div([dbc.Row(dbc.Col(dbc.Card(dbc.CardBody([html.H6("Exportar llamadas por responsable", className="mb-2"), html.P("Genera un archivo Excel con una hoja por cada responsable, con las llamadas efectivas y no efectivas en el formato de columnas de BD_Componente #3, listo para copiar y subir al archivo maestro.", className="text-muted small"), dbc.Button([html.I(className="bi bi-download me-2"), "Exportar por responsable"], id="btn-exportar-responsable", color="primary"), html.Div(id="mensaje-exportar-responsable", className="mt-2"), dcc.Download(id="descarga-excel-responsable")]), className="shadow-sm"), md=8), className="g-3 mb-3")])
 
 
-app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
+def panel_validacion():
+  return html.Div([dbc.Row(dbc.Col(dcc.Upload(id="upload-validacion", children=dbc.Button([html.I(className="bi bi-upload me-2"), "Cargar reporte de validacion"], color="primary", outline=True), multiple=False), md=4), className="mb-3"), html.Div(id="zona-alertas-validacion"), dbc.Row([dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-telephone me-2"), html.Span("Llamadas reales totales", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-total", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3), dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-speedometer2 me-2"), html.Span("% Cumplimiento promedio", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-cumplimiento", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3), dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-x-circle me-2"), html.Span("Llamadas faltantes", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-faltantes", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3), dbc.Col(dbc.Card(dbc.CardBody([html.Div([html.I(className="bi bi-exclamation-triangle me-2"), html.Span("Mal tipificadas", className="kpi-etiqueta")], className="kpi-encabezado"), html.Div(id="val-kpi-mal-tipificadas", className="kpi-valor")]), className="tarjeta-kpi shadow-sm"), md=3)], className="g-3 mb-3"), dbc.Card(dbc.CardBody(dcc.Graph(id="grafico-validacion-cumplimiento", config={"displayModeBar": False})), className="shadow-sm mb-3"), dbc.Card(dbc.CardBody([html.H6("Llamadas faltantes (no encontradas en la base de datos)", className="mb-3"), html.Div(id="tabla-validacion-faltantes")]), className="shadow-sm mb-3"), dbc.Card(dbc.CardBody([html.H6("Llamadas mal tipificadas", className="mb-3"), html.Div(id="tabla-validacion-mal-tipificadas")]), className="shadow-sm")])
+
+
+app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar"), dbc.Tab(panel_validacion(), label="Validacion de Llamadas", tab_id="tab-validacion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
 
 
 @app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Input("upload-datos", "contents"), State("upload-datos", "filename"), prevent_initial_call=False)
@@ -200,6 +204,40 @@ def exportar_por_responsable(n_clicks, datos_json, responsables, comunas, fecha_
   mensaje = dbc.Alert(f"Archivo generado con {df_filtrado['Responsable'].nunique()} responsable(s) y {len(df_filtrado)} llamada(s).", color="success", dismissable=True, duration=5000)
   return dcc.send_bytes(contenido, nombre_salida), mensaje
         
+
+
+@app.callback(Output("zona-alertas-validacion", "children"), Output("val-kpi-total", "children"), Output("val-kpi-cumplimiento", "children"), Output("val-kpi-faltantes", "children"), Output("val-kpi-mal-tipificadas", "children"), Output("grafico-validacion-cumplimiento", "figure"), Output("tabla-validacion-faltantes", "children"), Output("tabla-validacion-mal-tipificadas", "children"), Input("upload-validacion", "contents"), State("upload-validacion", "filename"), prevent_initial_call=True)
+def cargar_y_mostrar_validacion(contenido_upload, nombre_archivo):
+  if contenido_upload is None:
+    raise PreventUpdate
+  fig_vacia = go.Figure()
+  fig_vacia.add_annotation(text="Sin datos", showarrow=False, font=dict(size=14))
+  fig_vacia.update_xaxes(visible=False)
+  fig_vacia.update_yaxes(visible=False)
+  mensaje_vacio = html.Div("Sin datos para mostrar.", className="text-muted p-3")
+  try:
+    datos_bytes = decodificar_contenido_upload(contenido_upload)
+    resultado = cargar_validacion(io.BytesIO(datos_bytes))
+    resumen = resultado["resumen"]
+  except Exception as error:
+    alerta = dbc.Alert(f"No se pudo procesar el archivo '{nombre_archivo}'. Verifica que sea un reporte de validacion valido.", color="danger", dismissable=True)
+    return alerta, "0", "0.0%", "0", "0", fig_vacia, mensaje_vacio, mensaje_vacio
+  if resumen.empty:
+    alerta = dbc.Alert(f"El archivo '{nombre_archivo}' no tiene la hoja 'Resumen por Responsable' esperada.", color="danger", dismissable=True)
+    return alerta, "0", "0.0%", "0", "0", fig_vacia, mensaje_vacio, mensaje_vacio
+  total = int(resumen["Total llamadas reales (Llamadas 31)"].sum())
+  cumplimiento = resumen["% Cumplimiento de reporte"].mean()
+  faltantes_n = int(resumen["Total faltantes"].sum())
+  mal_tip_n = int(resumen["Total mal tipificadas"].sum())
+  fig = charts.grafico_cumplimiento_responsable(resumen)
+  cols_faltantes = ["Responsable_Gestor", "Fecha_Llamada", "Nombre_Persona_Mayor", "Comuna", "Estado"]
+  cols_mal_tip = ["Responsable_Gestor", "Fecha_Llamada", "Nombre_Persona_Mayor", "Comuna", "Diferencia_Encontrada"]
+  df_falt = resultado["faltantes"]
+  df_mal = resultado["mal_tipificadas"]
+  tabla_falt = _tabla_dash(df_falt[cols_faltantes]) if not df_falt.empty else mensaje_vacio
+  tabla_mal = _tabla_dash(df_mal[cols_mal_tip]) if not df_mal.empty else mensaje_vacio
+  alerta = dbc.Alert(f"Archivo '{nombre_archivo}' procesado correctamente ({len(resumen)} responsable(s)).", color="success", dismissable=True, duration=4000)
+  return alerta, f"{total:,}", f"{cumplimiento:.1f}%", f"{faltantes_n:,}", f"{mal_tip_n:,}", fig, tabla_falt, tabla_mal
 
 
 if __name__ == "__main__":

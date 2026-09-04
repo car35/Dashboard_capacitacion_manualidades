@@ -98,20 +98,12 @@ def verificar_bd():
   try:
     from sqlalchemy import text
     engine = data_loader.obtener_engine()
-    data_loader.inicializar_bd(engine)
     sesion = data_loader.obtener_sesion(engine)
     sesion.execute(text("SELECT 1"))
-    total_usuarios = sesion.query(data_loader.Usuario).count()
     sesion.close()
-    return f"Conexion a la base de datos: OK. Usuarios registrados: {total_usuarios}"
-  except Exception as error:
-    return f"Error de conexion: {type(error).__name__}: {error}", 500
-
-
-@server.errorhandler(500)
-def manejar_error_500(error):
-  import traceback
-  return "<pre>" + traceback.format_exc() + "</pre>", 500
+    return "OK"
+  except Exception:
+    return "Error", 500
 
 
 

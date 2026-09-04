@@ -166,3 +166,32 @@ def decodificar_contenido_upload(contents):
   _, contenido_b64 = contents.split(",", 1)
   return base64.b64decode(contenido_b64)
   
+
+
+HOJAS_VALIDACION_DETALLE = {
+  "faltantes": "Llamadas Faltantes",
+  "mal_tipificadas": "Llamadas Mal Tipificadas",
+  "inconsistentes": "Datos Inconsistentes",
+  "requiere_revision": "Requiere Revision",
+  "sin_datos": "Variables con Sin Datos",
+}
+
+
+def _tabla_resumen_responsable_validacion(hojas):
+  resumen = hojas.get("Resumen por Responsable")
+  if resumen is None or resumen.empty:
+    return pd.DataFrame()
+  col0 = resumen.columns[0]
+  mascara_corte = resumen[col0].astype(str).str.contains("DESAGREGA", na=False)
+  indices_corte = resumen[mascara_corte].index
+  tabla = resumen.iloc[: indices_corte[0]].copy() if len(indices_corte) else resumen.copy()
+  tabla = tabla.dropna(subset=[col0])
+  return tabla.reset_index(drop=True)
+
+
+def cargar_validacion(fuente):
+  hojas = pd.read_excel(fuente, sheet_name=None)
+  resultado = {"resumen": _tabla_resumen_responsable_validacion(hojas)}
+  for clave, nombre_hoja in HOJAS_VALIDACION_DETALLE.items():
+    resultado[clave] = hojas.get(nombre_hoja, pd.DataFrame())
+  return resultado

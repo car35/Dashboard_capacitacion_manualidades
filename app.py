@@ -108,6 +108,13 @@ def verificar_bd():
     return f"Error de conexion: {type(error).__name__}: {error}", 500
 
 
+@server.errorhandler(500)
+def manejar_error_500(error):
+  import traceback
+  return "<pre>" + traceback.format_exc() + "</pre>", 500
+
+
+
 
 
 @server.route("/configuracion-inicial", methods=["GET", "POST"])

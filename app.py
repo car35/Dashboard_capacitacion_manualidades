@@ -105,8 +105,10 @@ def verificar_bd():
     data_loader.inicializar_bd(engine)
     sesion = data_loader.obtener_sesion(engine)
     sesion.execute(text("SELECT 1"))
+    total = sesion.query(data_loader.Usuario).count()
+    correos = [u.correo for u in sesion.query(data_loader.Usuario).all()]
     sesion.close()
-    return "OK"
+    return f"OK. Usuarios: {total}. Correos: {correos}"
   except Exception:
     return "Error", 500
 

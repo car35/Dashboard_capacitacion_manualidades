@@ -195,3 +195,124 @@ def cargar_validacion(fuente):
   for clave, nombre_hoja in HOJAS_VALIDACION_DETALLE.items():
     resultado[clave] = hojas.get(nombre_hoja, pd.DataFrame())
   return resultado
+
+
+# ==========================================================================
+# Modulo de autenticacion: usuarios, proyectos y permisos (multi-proyecto)
+# ==========================================================================
+
+import os as _os
+from datetime import datetime as _datetime
+
+from flask_login import UserMixin as _UserMixin
+from sqlalchemy import create_engine as _create_engine, Column as _Column, Integer as _Integer, String as _String, Text as _Text, Boolean as _Boolean, DateTime as _DateTime, ForeignKey as _ForeignKey, UniqueConstraint as _UniqueConstraint
+from sqlalchemy.orm import declarative_base as _declarative_base, relationship as _relationship, sessionmaker as _sessionmaker
+from werkzeug.security import generate_password_hash as _generate_password_hash, check_password_hash as _check_password_hash
+
+BaseAuth = _declarative_base()
+
+
+class Usuario(BaseAuth, _UserMixin):
+  __tablename__ = "usuarios"
+  id = _Column(_Integer, primary_key=True)
+  correo = _Column(_String(255), unique=True, nullable=False)
+  nombre = _Column(_String(255), nullable=False)
+  contrasena_hash = _Column(_String(255), nullable=False)
+  es_administrador = _Column(_Boolean, default=False)
+  fecha_creacion = _Column(_DateTime, default=_datetime.utcnow)
+
+  def set_password(self, contrasena):
+    self.contrasena_hash = _generate_password_hash(contrasena)
+
+  def check_password(self, contrasena):
+    return _check_password_hash(self.contrasena_hash, contrasena)
+
+  def get_id(self):
+    return str(self.id)
+
+
+class Proyecto(BaseAuth):
+  __tablename__ = "proyectos"
+  id = _Column(_Integer, primary_key=True)
+  nombre = _Column(_String(255), nullable=False)
+  descripcion = _Column(_Text)
+  propietario_id = _Column(_Integer, _ForeignKey("usuarios.id"))
+  datos_json = _Column(_Text)
+  nombre_archivo_original = _Column(_String(255))
+  fecha_carga = _Column(_DateTime, default=_datetime.utcnow)
+  fecha_actualizacion = _Column(_DateTime, default=_datetime.utcnow)
+  propietario = _relationship("Usuario")
+
+
+class PermisoProyecto(BaseAuth):
+  __tablename__ = "permisos_proyecto"
+  id = _Column(_Integer, primary_key=True)
+  proyecto_id = _Column(_Integer, _ForeignKey("proyectos.id", ondelete="CASCADE"))
+  usuario_id = _Column(_Integer, _ForeignKey("usuarios.id", ondelete="CASCADE"))
+  rol = _Column(_String(20), nullable=False, default="visualizador")
+  fecha_otorgado = _Column(_DateTime, default=_datetime.utcnow)
+  __table_args__ = (_UniqueConstraint("proyecto_id", "usuario_id"),)
+
+
+def obtener_engine():
+  url_bd = _os.environ.get("DATABASE_URL", "sqlite:///dashboard_local.db")
+  if url_bd.startswith("postgres://"):
+    url_bd = url_bd.replace("postgres://", "postgresql://", 1)
+  return _create_engine(url_bd)
+
+
+def inicializar_bd(engine):
+  BaseAuth.metadata.create_all(engine)
+
+
+def obtener_sesion(engine):
+  Sesion = _sessionmaker(bind=engine)
+  return Sesion()
+
+
+def crear_usuario(sesion, correo, nombre, contrasena, es_administrador=False):
+  usuario = Usuario(correo=correo.strip().lower(), nombre=nombre, es_administrador=es_administrador)
+  usuario.set_password(contrasena)
+  sesion.add(usuario)
+  sesion.commit()
+  return usuario
+
+
+def verificar_credenciales(sesion, correo, contrasena):
+  usuario = sesion.query(Usuario).filter_by(correo=correo.strip().lower()).first()
+  if usuario and usuario.check_password(contrasena):
+    return usuario
+  return None
+
+
+def crear_proyecto(sesion, nombre, propietario_id, descripcion=None):
+  proyecto = Proyecto(nombre=nombre, descripcion=descripcion, propietario_id=propietario_id)
+  sesion.add(proyecto)
+  sesion.commit()
+  permiso = PermisoProyecto(proyecto_id=proyecto.id, usuario_id=propietario_id, rol="propietario")
+  sesion.add(permiso)
+  sesion.commit()
+  return proyecto
+
+
+def compartir_proyecto(sesion, proyecto_id, usuario_id, rol="visualizador"):
+  existente = sesion.query(PermisoProyecto).filter_by(proyecto_id=proyecto_id, usuario_id=usuario_id).first()
+  if existente:
+    existente.rol = rol
+  else:
+    sesion.add(PermisoProyecto(proyecto_id=proyecto_id, usuario_id=usuario_id, rol=rol))
+  sesion.commit()
+
+
+def proyectos_visibles_para(sesion, usuario_id):
+  return (sesion.query(Proyecto).join(PermisoProyecto, PermisoProyecto.proyecto_id == Proyecto.id).filter(PermisoProyecto.usuario_id == usuario_id).all())
+
+
+def rol_de_usuario_en_proyecto(sesion, usuario_id, proyecto_id):
+  permiso = sesion.query(PermisoProyecto).filter_by(usuario_id=usuario_id, proyecto_id=proyecto_id).first()
+  return permiso.rol if permiso else None
+
+
+def puede_editar(sesion, usuario_id, proyecto_id):
+  rol = rol_de_usuario_en_proyecto(sesion, usuario_id, proyecto_id)
+  return rol in ("propietario", "editor")

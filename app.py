@@ -433,14 +433,17 @@ def cargar_panel_administracion(tab_activo, n_clicks_usuario, n_clicks_compartir
   if not current_user.is_authenticated or not current_user.es_administrador:
     return dbc.Alert("No tienes permisos para acceder a esta seccion.", color="danger")
   engine_a = data_loader.obtener_engine()
-  sesion_a = data_loader.obtener_sesion(engine_a)
-  usuarios = sesion_a.query(data_loader.Usuario).all()
-  proyectos = sesion_a.query(data_loader.Proyecto).all()
-  opciones_usuarios = [{"label": f"{u.nombre} ({u.correo})", "value": u.id} for u in usuarios]
-  opciones_proyectos = [{"label": p.nombre, "value": p.id} for p in proyectos]
-  filas_usuarios = [{"Nombre": u.nombre, "Correo": u.correo, "Administrador": "Si" if u.es_administrador else "No"} for u in usuarios]
-  sesion_a.close()
-  tabla_usuarios = _tabla_dash(pd.DataFrame(filas_usuarios)) if filas_usuarios else html.Div("No hay usuarios.", className="text-muted")
+  try:
+    sesion_a = data_loader.obtener_sesion(engine_a)
+    usuarios = sesion_a.query(data_loader.Usuario).all()
+    proyectos = sesion_a.query(data_loader.Proyecto).all()
+    opciones_usuarios = [{"label": f"{u.nombre} ({u.correo})", "value": u.id} for u in usuarios]
+    opciones_proyectos = [{"label": p.nombre, "value": p.id} for p in proyectos]
+    filas_usuarios = [{"Nombre": u.nombre, "Correo": u.correo, "Administrador": "Si" if u.es_administrador else "No"} for u in usuarios]
+    sesion_a.close()
+    tabla_usuarios = _tabla_dash(pd.DataFrame(filas_usuarios)) if filas_usuarios else html.Div("No hay usuarios.", className="text-muted")
+  except Exception as error_panel:
+    return html.Div(f"Error al cargar el panel: {type(error_panel).__name__}: {error_panel}", className="text-danger p-3")
   return html.Div([
     dbc.Card(dbc.CardBody([html.H6("Crear nueva cuenta", className="mb-3"), dbc.Row([dbc.Col(dcc.Input(id="admin-nombre-nuevo", type="text", placeholder="Nombre", className="form-control"), md=3), dbc.Col(dcc.Input(id="admin-correo-nuevo", type="email", placeholder="Correo", className="form-control"), md=3), dbc.Col(dcc.Input(id="admin-contrasena-nueva", type="password", placeholder="Contrasena temporal", className="form-control"), md=3), dbc.Col(dbc.Button("Crear cuenta", id="btn-admin-crear-usuario", color="primary", className="w-100"), md=3)], className="g-2"), html.Div(id="admin-mensaje-usuario", className="mt-2")]), className="shadow-sm mb-3"),
     dbc.Card(dbc.CardBody([html.H6("Compartir proyecto", className="mb-3"), dbc.Row([dbc.Col(dcc.Dropdown(id="admin-selector-proyecto", options=opciones_proyectos, placeholder="Proyecto"), md=4), dbc.Col(dcc.Dropdown(id="admin-selector-usuario", options=opciones_usuarios, placeholder="Usuario"), md=4), dbc.Col(dcc.Dropdown(id="admin-selector-rol", options=[{"label": "Visualizador", "value": "visualizador"}, {"label": "Editor", "value": "editor"}], placeholder="Rol", value="visualizador"), md=2), dbc.Col(dbc.Button("Compartir", id="btn-admin-compartir", color="primary", className="w-100"), md=2)], className="g-2"), html.Div(id="admin-mensaje-compartir", className="mt-2")]), className="shadow-sm mb-3"),

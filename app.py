@@ -99,24 +99,16 @@ def logout():
 
 @server.route("/verificar-bd")
 def verificar_bd():
-  tiene_url = "DATABASE_URL" in os.environ
   try:
     from sqlalchemy import text
     engine = data_loader.obtener_engine()
     data_loader.inicializar_bd(engine)
     sesion = data_loader.obtener_sesion(engine)
     sesion.execute(text("SELECT 1"))
-    motor = engine.url.get_backend_name()
     sesion.close()
-    return f"OK. DATABASE_URL presente: {tiene_url}. Motor: {motor}"
-  except Exception as e:
-    return f"Error. DATABASE_URL presente: {tiene_url}. {type(e).__name__}", 500
-
-
-@server.errorhandler(500)
-def manejar_error_500(error):
-  import traceback
-  return "<pre>" + traceback.format_exc() + "</pre>", 500
+    return "OK"
+  except Exception:
+    return "Error", 500
 
 
 

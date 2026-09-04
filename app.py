@@ -14,6 +14,7 @@ from dash.exceptions import PreventUpdate
 
 import charts
 import kpi_engine
+import data_loader
 from data_loader import cargar_desde_bytes, cargar_desde_ruta, cargar_validacion, decodificar_contenido_upload
 from excel_export import generar_reporte_excel, generar_exportacion_responsable_zip
 
@@ -21,6 +22,21 @@ RUTA_DATOS_EJEMPLO = "data/sample_llamadas.xlsx"
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY, dbc.icons.BOOTSTRAP], title="Dashboard de Productividad de Llamadas", suppress_callback_exceptions=True)
 server = app.server
+
+
+@server.route("/verificar-bd")
+def verificar_bd():
+  try:
+    from sqlalchemy import text
+    engine = data_loader.obtener_engine()
+    data_loader.inicializar_bd(engine)
+    sesion = data_loader.obtener_sesion(engine)
+    sesion.execute(text("SELECT 1"))
+    total_usuarios = sesion.query(data_loader.Usuario).count()
+    sesion.close()
+    return f"Conexion a la base de datos: OK. Usuarios registrados: {total_usuarios}"
+  except Exception as error:
+    return f"Error de conexion: {type(error).__name__}: {error}", 500
 
 
 def tarjeta_kpi(kpi_id, etiqueta, icono):

@@ -155,7 +155,7 @@ def barra_filtros():
 
 
 def encabezado():
-  return dbc.Navbar(dbc.Container([html.Div([html.I(className="bi bi-graph-up-arrow me-2"), html.Span("Productividad de Gestion de Llamadas", className="fw-bold")], className="navbar-brand d-flex align-items-center"), html.Div([dcc.Upload(id="upload-datos", children=dbc.Button([html.I(className="bi bi-upload me-2"), "Cargar archivo"], color="light", outline=True, size="sm"), multiple=False), dbc.Button([html.I(className="bi bi-file-earmark-excel me-2"), "Exportar reporte Excel"], id="btn-exportar-excel", color="success", size="sm", className="ms-2"), dcc.Download(id="descarga-excel")], className="d-flex align-items-center")], fluid=True), color="dark", dark=True, className="mb-3 shadow-sm")
+  return dbc.Navbar(dbc.Container([html.Div([html.I(className="bi bi-graph-up-arrow me-2"), html.Span("Productividad de Gestion de Llamadas", className="fw-bold")], className="navbar-brand d-flex align-items-center"), html.Div([dcc.Dropdown(id="selector-proyecto", placeholder="Selecciona un proyecto", clearable=False, style={"minWidth": "260px", "color": "#212529"}, className="me-2"), dcc.Input(id="nombre-proyecto-nuevo", type="text", placeholder="Nombre del proyecto nuevo", className="me-2 form-control form-control-sm", style={"minWidth": "220px", "width": "220px"}), dcc.Upload(id="upload-datos", children=dbc.Button([html.I(className="bi bi-upload me-2"), "Cargar archivo"], color="light", outline=True, size="sm"), multiple=False), dbc.Button([html.I(className="bi bi-file-earmark-excel me-2"), "Exportar reporte Excel"], id="btn-exportar-excel", color="success", size="sm", className="ms-2"), dcc.Download(id="descarga-excel")], className="d-flex align-items-center")], fluid=True), color="dark", dark=True, className="mb-3 shadow-sm")
 
 
 def panel_comuna():
@@ -181,27 +181,49 @@ def panel_validacion():
 app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar"), dbc.Tab(panel_validacion(), label="Validacion de Llamadas", tab_id="tab-validacion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
 
 
-@app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Input("upload-datos", "contents"), State("upload-datos", "filename"), prevent_initial_call=False)
-def cargar_datos(contenido_upload, nombre_upload):
-  if contenido_upload is None:
-    resultado = cargar_desde_ruta(RUTA_DATOS_EJEMPLO)
-    nombre = "Datos de ejemplo (sample_llamadas.xlsx)"
-  else:
+@app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Output("selector-proyecto", "options"), Output("selector-proyecto", "value"), Input("upload-datos", "contents"), Input("selector-proyecto", "value"), State("upload-datos", "filename"), State("nombre-proyecto-nuevo", "value"), prevent_initial_call=False)
+def gestionar_proyectos(contenido_upload, proyecto_seleccionado_id, nombre_upload, nombre_proyecto_nuevo):
+  trigger_id = dash.ctx.triggered_id
+  usuario_id = current_user.id if current_user.is_authenticated else None
+  engine_p = data_loader.obtener_engine()
+  data_loader.inicializar_bd(engine_p)
+  sesion_p = data_loader.obtener_sesion(engine_p)
+  proyectos_usuario = data_loader.proyectos_visibles_para(sesion_p, usuario_id) if usuario_id else []
+  opciones_proyectos = [{"label": p.nombre, "value": p.id} for p in proyectos_usuario]
+  if trigger_id == "upload-datos" and contenido_upload is not None:
     datos_bytes = decodificar_contenido_upload(contenido_upload)
     resultado = cargar_desde_bytes(datos_bytes, nombre_upload)
-    nombre = nombre_upload
-  if not resultado.exito:
-    alerta = dbc.Alert([html.B("No se pudo cargar el archivo. "), *[html.Div(e) for e in resultado.errores]], color="danger", dismissable=True)
-    if contenido_upload is None:
+    if not resultado.exito:
+      sesion_p.close()
+      alerta = dbc.Alert([html.B("No se pudo cargar el archivo. "), *[html.Div(e) for e in resultado.errores]], color="danger", dismissable=True)
+      return dash.no_update, dash.no_update, alerta, opciones_proyectos, dash.no_update
+    nombre_final = (nombre_proyecto_nuevo or "").strip() or nombre_upload
+    proyecto_nuevo = data_loader.crear_proyecto(sesion_p, nombre_final, usuario_id)
+    proyecto_nuevo.datos_json = resultado.df.to_json(date_format="iso", orient="split")
+    proyecto_nuevo.nombre_archivo_original = nombre_upload
+    sesion_p.commit()
+    opciones_proyectos = [{"label": p.nombre, "value": p.id} for p in data_loader.proyectos_visibles_para(sesion_p, usuario_id)]
+    alertas = []
+    if resultado.advertencias:
+      alertas.append(dbc.Alert([html.B(f"Proyecto '{nombre_final}' guardado con observaciones: ")] + [html.Div(a) for a in resultado.advertencias], color="warning", dismissable=True))
+    else:
+      alertas.append(dbc.Alert(f"Proyecto '{nombre_final}' guardado correctamente ({len(resultado.df)} filas).", color="success", dismissable=True, duration=4000))
+    sesion_p.close()
+    return proyecto_nuevo.datos_json, nombre_final, alertas, opciones_proyectos, proyecto_nuevo.id
+  if trigger_id == "selector-proyecto" and proyecto_seleccionado_id is not None:
+    proyecto = sesion_p.query(data_loader.Proyecto).filter_by(id=proyecto_seleccionado_id).first()
+    sesion_p.close()
+    if proyecto is None:
       raise PreventUpdate
-    return dash.no_update, dash.no_update, alerta
-  alertas = []
-  if resultado.advertencias:
-    alertas.append(dbc.Alert([html.B("Archivo cargado con observaciones: ")] + [html.Div(a) for a in resultado.advertencias], color="warning", dismissable=True))
-  else:
-    alertas.append(dbc.Alert(f"Archivo '{nombre}' cargado correctamente ({len(resultado.df)} filas).", color="success", dismissable=True, duration=4000))
-  return resultado.df.to_json(date_format="iso", orient="split"), nombre, alertas
-          
+    alerta = dbc.Alert(f"Proyecto '{proyecto.nombre}' cargado.", color="success", dismissable=True, duration=3000)
+    return proyecto.datos_json, proyecto.nombre_archivo_original, alerta, opciones_proyectos, dash.no_update
+  if proyectos_usuario:
+    primer_proyecto = proyectos_usuario[0]
+    sesion_p.close()
+    return primer_proyecto.datos_json, primer_proyecto.nombre_archivo_original, dash.no_update, opciones_proyectos, primer_proyecto.id
+  resultado = cargar_desde_ruta(RUTA_DATOS_EJEMPLO)
+  sesion_p.close()
+  return resultado.df.to_json(date_format="iso", orient="split"), "Datos de ejemplo (sample_llamadas.xlsx)", dash.no_update, opciones_proyectos, dash.no_update
 
 
 @app.callback(Output("filtro-fechas", "min_date_allowed"), Output("filtro-fechas", "max_date_allowed"), Output("filtro-fechas", "start_date"), Output("filtro-fechas", "end_date"), Input("store-datos", "data"))

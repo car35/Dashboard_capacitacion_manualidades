@@ -426,8 +426,8 @@ def cargar_y_mostrar_validacion(contenido_upload, nombre_archivo):
   return alerta, f"{total:,}", f"{cumplimiento:.1f}%", f"{faltantes_n:,}", f"{mal_tip_n:,}", fig, tabla_falt, tabla_mal
 
 
-@app.callback(Output("contenido-administracion", "children"), Input("tabs-principales", "active_tab"), Input("btn-admin-crear-usuario", "n_clicks"), Input("btn-admin-compartir", "n_clicks"), prevent_initial_call=False)
-def cargar_panel_administracion(tab_activo, n_clicks_usuario, n_clicks_compartir):
+@app.callback(Output("contenido-administracion", "children"), Input("tabs-principales", "active_tab"), prevent_initial_call=False)
+def cargar_panel_administracion(tab_activo):
   if tab_activo != "tab-administracion":
     raise PreventUpdate
   if not current_user.is_authenticated or not current_user.es_administrador:

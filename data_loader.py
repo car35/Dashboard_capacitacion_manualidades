@@ -241,6 +241,7 @@ class Proyecto(BaseAuth):
   nombre_archivo_original = _Column(_String(255))
   fecha_carga = _Column(_DateTime, default=_datetime.utcnow)
   fecha_actualizacion = _Column(_DateTime, default=_datetime.utcnow)
+  token_publico = _Column(_String(64), unique=True, nullable=True)
   propietario = _relationship("Usuario")
 
 
@@ -322,3 +323,11 @@ def rol_de_usuario_en_proyecto(sesion, usuario_id, proyecto_id):
 def puede_editar(sesion, usuario_id, proyecto_id):
   rol = rol_de_usuario_en_proyecto(sesion, usuario_id, proyecto_id)
   return rol in ("propietario", "editor")
+
+def obtener_o_crear_token_publico(sesion, proyecto):
+  import secrets
+  if proyecto.token_publico:
+    return proyecto.token_publico
+  proyecto.token_publico = secrets.token_urlsafe(16)
+  sesion.commit()
+  return proyecto.token_publico

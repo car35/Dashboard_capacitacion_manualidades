@@ -11,7 +11,6 @@ import pandas as pd
 
 COLUMNAS_REQUERIDAS = ["Responsable", "Comuna", "Llamada_Efectiva"]
 COLUMNAS_OPCIONALES = ["Fecha", "Cliente", "Observaciones"]
-
 ALIAS_COLUMNAS = {
   "Responsable": ["responsable", "agente", "asesor", "gestor", "responsablellamada", "responsablellamada"],
   "Comuna": ["comuna", "zona", "sector", "barrio"],
@@ -20,7 +19,6 @@ ALIAS_COLUMNAS = {
   "Cliente": ["cliente", "nombre", "usuario", "persona"],
   "Observaciones": ["observaciones", "observacion", "notas", "comentarios"],
 }
-
 
 def _normalizar_texto(txt):
   txt = str(txt).strip().lower()

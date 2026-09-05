@@ -45,7 +45,7 @@ def cargar_usuario_sesion(user_id):
     return None
 
 
-RUTAS_PUBLICAS = ("/login", "/logout", "/configuracion-inicial", "/verificar-bd", "/assets")
+RUTAS_PUBLICAS = ("/login", "/logout", "/configuracion-inicial", "/verificar-bd", "/assets", "/publico")
 
 
 @server.before_request
@@ -195,7 +195,7 @@ def barra_filtros():
 
 
 def encabezado():
-  return dbc.Navbar(dbc.Container([html.Div([html.I(className="bi bi-graph-up-arrow me-2"), html.Span("Productividad de Gestion de Llamadas", className="fw-bold")], className="navbar-brand d-flex align-items-center"), html.Div([dcc.Dropdown(id="selector-proyecto", placeholder="Selecciona un proyecto", clearable=False, style={"minWidth": "260px", "color": "#212529"}, className="me-2"), dcc.Input(id="nombre-proyecto-nuevo", type="text", placeholder="Nombre del proyecto nuevo", className="me-2 form-control form-control-sm", style={"minWidth": "220px", "width": "220px"}), dcc.Upload(id="upload-datos", children=dbc.Button([html.I(className="bi bi-upload me-2"), "Cargar archivo"], color="light", outline=True, size="sm"), multiple=False), dbc.Button([html.I(className="bi bi-file-earmark-excel me-2"), "Exportar reporte Excel"], id="btn-exportar-excel", color="success", size="sm", className="ms-2"), dcc.Download(id="descarga-excel"), html.Span(id="nombre-usuario-sesion", className="text-white ms-3 me-2 small"), html.A(dbc.Button([html.I(className="bi bi-box-arrow-right me-2"), "Cerrar sesion"], color="danger", outline=True, size="sm", className="ms-2"), href="/logout")], className="d-flex align-items-center")], fluid=True), color="dark", dark=True, className="mb-3 shadow-sm")
+  return dbc.Navbar(dbc.Container([html.Div([html.I(className="bi bi-graph-up-arrow me-2"), html.Span("Productividad de Gestion de Llamadas", className="fw-bold")], className="navbar-brand d-flex align-items-center"), html.Div([dcc.Dropdown(id="selector-proyecto", placeholder="Selecciona un proyecto", clearable=False, style={"minWidth": "260px", "color": "#212529"}, className="me-2"), dcc.Input(id="nombre-proyecto-nuevo", type="text", placeholder="Nombre del proyecto nuevo", className="me-2 form-control form-control-sm", style={"minWidth": "220px", "width": "220px"}), dcc.Upload(id="upload-datos", children=dbc.Button([html.I(className="bi bi-upload me-2"), "Cargar archivo"], color="light", outline=True, size="sm"), multiple=False), dbc.Button([html.I(className="bi bi-file-earmark-excel me-2"), "Exportar reporte Excel"], id="btn-exportar-excel", color="success", size="sm", className="ms-2"), dcc.Download(id="descarga-excel"), dbc.Button([html.I(className="bi bi-link-45deg me-2"), "Enlace publico"], id="btn-generar-enlace", color="info", outline=True, size="sm", className="ms-2"), html.Span(id="nombre-usuario-sesion", className="text-white ms-3 me-2 small"), html.A(dbc.Button([html.I(className="bi bi-box-arrow-right me-2"), "Cerrar sesion"], color="danger", outline=True, size="sm", className="ms-2"), href="/logout")], className="d-flex align-items-center")], fluid=True), color="dark", dark=True, className="mb-3 shadow-sm")
 
 
 def panel_comuna():
@@ -222,7 +222,7 @@ def panel_administracion():
   return html.Div(id="contenido-administracion")
 
 
-app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar"), dbc.Tab(panel_validacion(), label="Validacion de Llamadas", tab_id="tab-validacion"), dbc.Tab(panel_administracion(), label="Administracion", tab_id="tab-administracion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
+app.layout = html.Div([dcc.Store(id="store-datos"), dcc.Store(id="store-nombre-archivo"), encabezado(), dbc.Container([html.Div(id="zona-alertas"), html.Div(id="zona-enlace-publico"), barra_filtros(), dbc.Row([dbc.Col(tarjeta_kpi(kpi_id, etiqueta, icono), lg=3, md=4, sm=6, xs=12, className="mb-3") for kpi_id, etiqueta, icono in FILA_KPIS], className="g-3 mb-2"), dbc.Tabs([dbc.Tab(panel_comuna(), label="Analisis por Comuna", tab_id="tab-comuna"), dbc.Tab(panel_responsable(), label="Analisis por Responsable", tab_id="tab-responsable"), dbc.Tab(panel_relacion(), label="Relacion Responsable - Comuna", tab_id="tab-relacion"), dbc.Tab(panel_exportar_responsable(), label="Exportar por Responsable", tab_id="tab-exportar"), dbc.Tab(panel_validacion(), label="Validacion de Llamadas", tab_id="tab-validacion"), dbc.Tab(panel_administracion(), label="Administracion", tab_id="tab-administracion")], id="tabs-principales", active_tab="tab-comuna", className="mt-2"), html.Footer("Dashboard de Productividad - generado con Dash, Plotly y Pandas", className="text-muted text-center small py-4")], fluid=True)])
 
 
 @app.callback(Output("store-datos", "data"), Output("store-nombre-archivo", "data"), Output("zona-alertas", "children"), Output("selector-proyecto", "options"), Output("selector-proyecto", "value"), Input("upload-datos", "contents"), Input("selector-proyecto", "value"), State("upload-datos", "filename"), State("nombre-proyecto-nuevo", "value"), prevent_initial_call=False)
@@ -491,6 +491,73 @@ def mostrar_nombre_usuario(tab_activo):
   if current_user.is_authenticated:
     return f"Hola, {current_user.nombre}"
   return ""
+
+
+@app.callback(Output("zona-enlace-publico", "children"), Input("btn-generar-enlace", "n_clicks"), State("selector-proyecto", "value"), prevent_initial_call=True)
+def generar_enlace_publico(n_clicks, proyecto_id):
+  if not proyecto_id:
+    return dbc.Alert("Selecciona un proyecto primero para generar su enlace publico.", color="warning", dismissable=True)
+  engine_pub = data_loader.obtener_engine()
+  sesion_pub = data_loader.obtener_sesion(engine_pub)
+  proyecto = sesion_pub.query(data_loader.Proyecto).filter_by(id=proyecto_id).first()
+  if proyecto is None:
+    sesion_pub.close()
+    return dbc.Alert("No se encontro el proyecto.", color="danger", dismissable=True)
+  token = data_loader.obtener_o_crear_token_publico(sesion_pub, proyecto)
+  sesion_pub.close()
+  url_publica = f"{request.host_url.rstrip('/')}/publico/{token}"
+  return dbc.Alert([html.B("Enlace de solo lectura: "), html.A(url_publica, href=url_publica, target="_blank")], color="info", dismissable=True)
+
+
+@server.route("/publico/<token>")
+def vista_publica(token):
+  engine_pub = data_loader.obtener_engine()
+  data_loader.inicializar_bd(engine_pub)
+  sesion_pub = data_loader.obtener_sesion(engine_pub)
+  proyecto = sesion_pub.query(data_loader.Proyecto).filter_by(token_publico=token).first()
+  if proyecto is None or not proyecto.datos_json:
+    sesion_pub.close()
+    return "Enlace no valido.", 404
+  df = pd.read_json(io.StringIO(proyecto.datos_json), orient="split")
+  nombre_proyecto = proyecto.nombre
+  sesion_pub.close()
+  if "Fecha" in df.columns:
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+  kpis = kpi_engine.calcular_kpis_generales(df)
+  tabla_comunas = kpi_engine.calcular_tabla_comunas(df).to_html(index=False, classes="tabla", border=0)
+  tabla_resp = kpi_engine.calcular_tabla_responsables(df).to_html(index=False, classes="tabla", border=0)
+  return f"""
+  <html><head><meta charset="utf-8"><title>{nombre_proyecto} - Vista publica</title>
+  <style>
+  body {{ font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; color: #2B2F38; }}
+  h1 {{ color: #1B4965; }}
+  .kpis {{ display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }}
+  .kpi {{ border: 1px solid #ddd; border-radius: 10px; padding: 14px 18px; min-width: 160px; }}
+  .kpi .valor {{ font-size: 1.4rem; font-weight: bold; color: #1B4965; }}
+  .kpi .etiqueta {{ font-size: 0.8rem; color: #6B7686; text-transform: uppercase; }}
+  table.tabla {{ border-collapse: collapse; width: 100%; margin-bottom: 30px; }}
+  table.tabla th, table.tabla td {{ border: 1px solid #ddd; padding: 6px 10px; text-align: left; }}
+  table.tabla th {{ background: #1B4965; color: white; }}
+  .aviso {{ background: #eef6fb; border-left: 4px solid #5FA8D3; padding: 10px 14px; margin-bottom: 20px; font-size: 0.9rem; }}
+  </style></head><body>
+  <div class="aviso">Vista publica de solo lectura. Esta informacion no se puede editar desde aqui.</div>
+  <h1>{nombre_proyecto}</h1>
+  <div class="kpis">
+    <div class="kpi"><div class="valor">{kpis.total_llamadas:,}</div><div class="etiqueta">Total llamadas</div></div>
+    <div class="kpi"><div class="valor">{kpis.total_si:,}</div><div class="etiqueta">Efectivas (SI)</div></div>
+    <div class="kpi"><div class="valor">{kpis.total_no:,}</div><div class="etiqueta">No efectivas (NO)</div></div>
+    <div class="kpi"><div class="valor">{kpis.pct_efectividad:.1f}%</div><div class="etiqueta">% Efectividad</div></div>
+    <div class="kpi"><div class="valor">{kpis.total_responsables}</div><div class="etiqueta">Responsables</div></div>
+    <div class="kpi"><div class="valor">{kpis.total_comunas}</div><div class="etiqueta">Comunas</div></div>
+    <div class="kpi"><div class="valor">{kpis.mejor_comuna}</div><div class="etiqueta">Mejor comuna ({kpis.mejor_comuna_pct:.1f}%)</div></div>
+    <div class="kpi"><div class="valor">{kpis.mejor_responsable}</div><div class="etiqueta">Responsable mas productivo ({kpis.mejor_responsable_pct:.1f}%)</div></div>
+  </div>
+  <h3>Efectividad por comuna</h3>
+  {tabla_comunas}
+  <h3>Efectividad por responsable</h3>
+  {tabla_resp}
+  </body></html>
+  """
 
 
 if __name__ == "__main__":
